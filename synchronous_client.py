@@ -24,7 +24,8 @@ from bike_crossing import BikeCrossing
 '''
 To be able to use this import please add the following environment variable: PYTHONPATH=%CARLA_ROOT%/PythonAPI/carla 
 '''
-from agents.navigation.behavior_agent import BehaviorAgent
+from core.custom_behaviour_agent import BehaviorAgent
+# from agents.navigation.behavior_agent import BehaviorAgent
 
 try:
     sys.path.append(glob.glob('../carla/dist/carla-*%d.%d-%s.egg' % (
@@ -159,8 +160,6 @@ def main(args):
             start_pose)
         #print(vehicle.attributes.get('role_name'))
         actor_list.append(vehicle)
-        world.player = vehicle
-        behaviour_agent = BehaviorAgent(vehicle, behavior="normal")
 
         #spawn spectator cam
         cam_bp = blueprint_library.find('sensor.camera.rgb')
@@ -315,6 +314,10 @@ def main(args):
                 '''
                 if controller._agent_autopilot_enabled == True:
                     if prev_agent_autopilot_enabled == False:
+                        # Workaround to prevent app crash
+                        world.player = vehicle
+                        # Init the agent
+                        behaviour_agent = BehaviorAgent(vehicle, ignore_traffic_light=True, behavior="normal")
                         # Set agent's destination  
                         behaviour_agent.set_destination(behaviour_agent.vehicle.get_location(), AUTOPILOT_DESTINATION, clean=True)
                         print ("Autopilot is controlled by BehaviourAgent to destination: {}".format(AUTOPILOT_DESTINATION))
@@ -325,8 +328,8 @@ def main(args):
                         print("Target almost reached, mission accomplished...")
                         controller._agent_autopilot_enabled = False
                         behaviour_agent.set_destination(behaviour_agent.vehicle.get_location(), behaviour_agent.vehicle.get_location(), clean=True)
-                    else:
-                        print("Autopilot driving {}  more waypoints till destination is reached".format(len(behaviour_agent.get_local_planner().waypoints_queue)))
+                    # else:
+                        # print("Autopilot driving {}  more waypoints till destination is reached".format(len(behaviour_agent.get_local_planner().waypoints_queue)))
 
                     # speed_limit = world.player.get_speed_limit()
                     # print ("speed_limit: {}".format(speed_limit))
