@@ -86,7 +86,7 @@ class BehaviorAgent(Agent):
         """
         self.speed = get_speed(self.vehicle)
         # TO-DO smooth accelerate and deccelerate to prevent accidental waypoint swap
-        self.speed_limit = max(60, world.player.get_speed_limit())
+        self.speed_limit = max(40, world.player.get_speed_limit()) 
         self._local_planner.set_speed(self.speed_limit)
         self.direction = self._local_planner.target_road_option
         if self.direction is None:

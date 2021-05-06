@@ -317,7 +317,7 @@ def main(args):
                         # Workaround to prevent app crash
                         world.player = vehicle
                         # Init the agent
-                        behaviour_agent = BehaviorAgent(vehicle, ignore_traffic_light=True, behavior="normal")
+                        behaviour_agent = BehaviorAgent(vehicle, ignore_traffic_light=True, behavior="cautious")
                         # Set agent's destination  
                         behaviour_agent.set_destination(behaviour_agent.vehicle.get_location(), AUTOPILOT_DESTINATION, clean=True)
                         print ("Autopilot is controlled by BehaviourAgent to destination: {}".format(AUTOPILOT_DESTINATION))
