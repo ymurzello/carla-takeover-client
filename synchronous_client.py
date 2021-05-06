@@ -21,6 +21,11 @@ from core.input import DualControl
 from core.sync_mode import CarlaSyncMode
 from bike_crossing import BikeCrossing
 
+'''
+To be able to use this import please add the following environment variable: PYTHONPATH=%CARLA_ROOT%/PythonAPI/carla 
+'''
+from agents.navigation.behavior_agent import BehaviorAgent
+
 try:
     sys.path.append(glob.glob('../carla/dist/carla-*%d.%d-%s.egg' % (
         sys.version_info.major,
@@ -126,6 +131,10 @@ def main(args):
 
     config = read_json_config(args.spawn_config)
 
+    # This agent will drive the autopilot to certain destination
+    behaviour_agent = None
+    is_agent_controlled = False
+
     try:
         m = world.get_map()
 
@@ -147,6 +156,16 @@ def main(args):
             start_pose)
         #print(vehicle.attributes.get('role_name'))
         actor_list.append(vehicle)
+        
+        
+        behaviour_agent = BehaviorAgent(vehicle, behavior="normal")
+        # Let the behaviour agent control the ego vehicle   
+        destination = carla.Location(83.342, -136.286, 8.047)
+        behaviour_agent.set_destination(behaviour_agent.vehicle.get_location(), destination, clean=True)
+        is_agent_controlled = True
+        world.player = vehicle
+        print ("Autopilot is controlled by BehaviourAgent to destination: {}".format(destination))
+
 
         #spawn spectator cam
         cam_bp = blueprint_library.find('sensor.camera.rgb')
@@ -234,6 +253,7 @@ def main(args):
             record_start_flag = False
             yaw_prev = None
             while True:
+
                 if should_quit():
                     return
 
@@ -295,63 +315,100 @@ def main(args):
 
                 affordance = (heading_error, delta_y, curvature, dist_to_car, dist_to_walker)
 
+                '''
+                behaviour agent begin
+                '''
+                # print (" location: {}".format(behaviour_agent.vehicle.get_location()))
 
+                # if controller._autopilot_enabled == True:
+                #     if is_agent_controlled == False:
+                #         # Let the behaviour agent control the ego vehicle 
+                #         destination = carla.Location(83.342, -136.286, 8.047)
+                #         behaviour_agent.set_destination(behaviour_agent.vehicle.get_location(), destination, clean=True)
+                #         is_agent_controlled = True
+                #         world.player = vehicle
+                #         print ("Autopilot is controlled by BehaviourAgent to destination: {}".format(destination))
+                # else:
+                #     is_agent_controlled = False
+
+
+                behaviour_agent.update_information(world)
+
+                if len(behaviour_agent.get_local_planner().waypoints_queue) < 4:
+                    print("Target almost reached, mission accomplished...")
+                    behaviour_agent.set_destination(behaviour_agent.vehicle.get_location(), behaviour_agent.vehicle.get_location(), clean=True)
+                else:
+                    print("{}  more waypoints till destination si reached".format(len(behaviour_agent.get_local_planner().waypoints_queue)))
+
+                # speed_limit = world.player.get_speed_limit()
+                # print ("speed_limit: {}".format(speed_limit))
+                # behaviour_agent.get_local_planner().set_speed(speed_limit)
+
+                control = behaviour_agent.run_step()
+                world.player.apply_control(control)
+
+                '''
+                behaviour agent end
+                '''
 
                 '''
                 scenario logic
                 '''
-                if sync_mode.scenario:
-                    #check distance to bike
-                    bike_dist = bike_crossing.check_distance(trans.location)
-                    #if distance is below threshold, do something
-                    #first stage: flash warning
-                    #2nd stage: bike starts crossing
+                # if sync_mode.scenario:
+                    
+                #     print ("sync_mode_scenario stage {}".format(stage))
 
-                    if stage==0:
-                        if bike_dist<trigger_distances[0]:
-                            #stage 0 to 1 or 0 to 3 transition
-                            if controller._autopilot_enabled:
-                                stage = 1
-                            else:
-                                stage = 3
-                    elif stage==1:
-                        #stage 1: play warning sound
-                        if snapshot.timestamp.elapsed_seconds - sound_time > 3:
-                            beep.play()
-                            sound_time = snapshot.timestamp.elapsed_seconds
-                        if snapshot.timestamp.elapsed_seconds - flash_time > 1.5:
-                            flash_on = not flash_on
-                            flash_time = snapshot.timestamp.elapsed_seconds
+                #     #check distance to bike
+                #     bike_dist = bike_crossing.check_distance(trans.location)
+                #     #if distance is below threshold, do something
+                #     #first stage: flash warning
+                #     #2nd stage: bike starts crossing
 
-                        if bike_dist<trigger_distances[1]:
-                            flash_on = False
-                            #stage one to two transition
-                            bike_crossing.begin()
-                            #disable autopilot
-                            controller._autopilot_enabled = False
-                            print('autopilot toggled: {}'.format(controller._autopilot_enabled))
-                            sync_mode.car.set_autopilot(controller._autopilot_enabled)
-                            stage = 2
-                        elif controller._autopilot_enabled == False:
-                            #stage 1 to 3 transition
-                            flash_on = False
-                            stage = 3
-                    elif stage==2:
-                        #delta, throttle, brake = driver.drive(heading_error, delta_y, vx, curvature, 28, min(dist_to_car, dist_to_walker))
-                        vc = carla.VehicleControl(throttle=0, steer=0, brake=0.02)
-                        sync_mode.car.apply_control(vc)
-                    elif stage == 3:
-                        #stage 3, bike crossing still gets triggered
-                        #but driver stays in control
-                        if bike_dist<trigger_distances[1]:
-                            bike_crossing.begin(carla.VehicleControl(throttle=0.3))
-                            stage = 4
-                        elif controller._autopilot_enabled:
-                            stage = 1
+                #     if stage==0:
+                #         if bike_dist<trigger_distances[0]:
+                #             #stage 0 to 1 or 0 to 3 transition
+                #             if controller._autopilot_enabled:
+                #                 stage = 1
+                #             else:
+                #                 stage = 3
+                #     elif stage==1:
+                #         #stage 1: play warning sound
+                #         if snapshot.timestamp.elapsed_seconds - sound_time > 3:
+                #             beep.play()
+                #             sound_time = snapshot.timestamp.elapsed_seconds
+                #         if snapshot.timestamp.elapsed_seconds - flash_time > 1.5:
+                #             flash_on = not flash_on
+                #             flash_time = snapshot.timestamp.elapsed_seconds
 
-                    elif stage==4:
-                        #nothing happens in stage 4
-                        pass
+                #         if bike_dist<trigger_distances[1]:
+                #             flash_on = False
+                #             #stage one to two transition
+                #             bike_crossing.begin()
+                #             #disable autopilot
+                #             controller._autopilot_enabled = False
+                #             print('autopilot toggled: {}'.format(controller._autopilot_enabled))
+                #             sync_mode.car.set_autopilot(controller._autopilot_enabled)
+                #             stage = 2
+                #         elif controller._autopilot_enabled == False:
+                #             #stage 1 to 3 transition
+                #             flash_on = False
+                #             stage = 3
+                #     elif stage==2:
+                #         #delta, throttle, brake = driver.drive(heading_error, delta_y, vx, curvature, 28, min(dist_to_car, dist_to_walker))
+                #         vc = carla.VehicleControl(throttle=0, steer=0, brake=0.02)
+                #         sync_mode.car.apply_control(vc)
+                #     elif stage == 3:
+                #         #stage 3, bike crossing still gets triggered
+                #         #but driver stays in control
+                #         if bike_dist<trigger_distances[1]:
+                #             bike_crossing.begin(carla.VehicleControl(throttle=0.3))
+                #             stage = 4
+                #         elif controller._autopilot_enabled:
+                #             stage = 1
+
+                #     elif stage==4:
+                #         #nothing happens in stage 4
+                #         pass
 
                 '''end of scenario code'''
 
@@ -414,16 +471,18 @@ def main(args):
                     ((SCREEN_W/2)-60, SCREEN_H-50))
                 pygame.display.flip()
 
-    finally:
+    except Exception as exception:
+        print (str(exception))
 
+    finally:
         print('destroying actors.')
         if args.scenario:
             bike_crossing.kill_npcs()
         for actor in actor_list:
             actor.destroy()
 
-        pygame.quit()
-        print('done.')
+    pygame.quit()
+    print('done.')
 
 
 if __name__ == '__main__':
