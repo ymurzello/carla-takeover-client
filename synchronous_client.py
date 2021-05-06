@@ -134,6 +134,7 @@ def main(args):
     # This agent will drive the autopilot to certain destination
     behaviour_agent = None
     is_agent_controlled = False
+    prev_autopilot = False
 
     try:
         m = world.get_map()
@@ -156,16 +157,8 @@ def main(args):
             start_pose)
         #print(vehicle.attributes.get('role_name'))
         actor_list.append(vehicle)
-        
-        
-        behaviour_agent = BehaviorAgent(vehicle, behavior="normal")
-        # Let the behaviour agent control the ego vehicle   
-        destination = carla.Location(83.342, -136.286, 8.047)
-        behaviour_agent.set_destination(behaviour_agent.vehicle.get_location(), destination, clean=True)
-        is_agent_controlled = True
         world.player = vehicle
-        print ("Autopilot is controlled by BehaviourAgent to destination: {}".format(destination))
-
+        behaviour_agent = BehaviorAgent(vehicle, behavior="normal")
 
         #spawn spectator cam
         cam_bp = blueprint_library.find('sensor.camera.rgb')
@@ -225,8 +218,7 @@ def main(args):
         actor_list.append(mirror_right)
         sensor_list.append(mirror_right)
 
-
-        controller = DualControl(vehicle, world=world, start_in_autopilot=False)
+        controller = DualControl(vehicle, world=world, start_in_autopilot=False, agent_controlled=True)
 
         if args.scenario:
             bike_crossing = BikeCrossing()
@@ -244,7 +236,6 @@ def main(args):
 
         #initial hlc
         hlc = 2
-
 
         # Create a synchronous mode context.
         #SENSORS SHOULD BE PASSED IN THE SAME ORDER AS IN ACTOR_LIST
@@ -331,21 +322,38 @@ def main(args):
                 # else:
                 #     is_agent_controlled = False
 
+                # if frame_count < 101 :
+                #     frame_count += 1
+                #     print (frame_count)
 
-                behaviour_agent.update_information(world)
+                if controller._agent_autopilot_enabled == True:
+                    if prev_autopilot == False:
+                        # Set agent;s destination  
+                        print ("Init agent from location : {}".format(behaviour_agent.vehicle.get_location()))
+                        destination = carla.Location(83.342, -136.286, 8.047)
+                        behaviour_agent.set_destination(behaviour_agent.vehicle.get_location(), destination, clean=True)
+                        print ("Autopilot is controlled by BehaviourAgent to destination: {}".format(destination))
 
-                if len(behaviour_agent.get_local_planner().waypoints_queue) < 4:
-                    print("Target almost reached, mission accomplished...")
-                    behaviour_agent.set_destination(behaviour_agent.vehicle.get_location(), behaviour_agent.vehicle.get_location(), clean=True)
-                else:
-                    print("{}  more waypoints till destination si reached".format(len(behaviour_agent.get_local_planner().waypoints_queue)))
+                    behaviour_agent.update_information(world)
 
-                # speed_limit = world.player.get_speed_limit()
-                # print ("speed_limit: {}".format(speed_limit))
-                # behaviour_agent.get_local_planner().set_speed(speed_limit)
+                    if len(behaviour_agent.get_local_planner().waypoints_queue) < 4:
+                        print("Target almost reached, mission accomplished...")
+                        controller._agent_autopilot_enabled = False
+                        behaviour_agent.set_destination(behaviour_agent.vehicle.get_location(), behaviour_agent.vehicle.get_location(), clean=True)
+                    # else:
+                    #     print("{}  more waypoints till destination si reached".format(len(behaviour_agent.get_local_planner().waypoints_queue)))
 
-                control = behaviour_agent.run_step()
-                world.player.apply_control(control)
+                    # speed_limit = world.player.get_speed_limit()
+                    # print ("speed_limit: {}".format(speed_limit))
+                    # behaviour_agent.get_local_planner().set_speed(150)
+
+                    input_control = behaviour_agent.run_step()
+                    world.player.apply_control(input_control)
+
+
+                prev_autopilot = controller._agent_autopilot_enabled
+
+                 #controller._autopilot_enabled
 
                 '''
                 behaviour agent end

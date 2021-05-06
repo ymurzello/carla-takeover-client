@@ -42,9 +42,25 @@ import carla
 import math
 
 class DualControl(object):
-    def __init__(self, actor, world=None, start_in_autopilot=False):
-        self._world = world
-        self._autopilot_enabled = start_in_autopilot
+    def __init__(self, actor, world=None, start_in_autopilot=False, agent_controlled=False):
+        '''
+        Args:
+        actor
+        world
+        start_in_autopilot
+        agent_controlled - True, means that the actor is controlled by the BehaviourAgent, so this class no longer has to set actor.enable_autopilot().
+                           False, means that the actor is controlled by the default autopilot. 
+        '''
+        self._agent_controlled = agent_controlled
+        self._agent_autopilot_enabled = False # Toggled only when agent_controlled == True 
+        self._autopilot_enabled = False # Toggled only when agent_controlled == False
+        
+        if start_in_autopilot == True:
+            if self._agent_controlled:
+                self._agent_autopilot_enabled = True
+            else:
+                self._autopilot_enabled = True
+        
         if isinstance(actor, carla.Vehicle):
             self._control = carla.VehicleControl()
             actor.set_autopilot(self._autopilot_enabled)
@@ -118,9 +134,13 @@ class DualControl(object):
 
             elif event.type == pygame.JOYBUTTONUP:
                 if event.button == self._autopilot_idx:
-                    self._autopilot_enabled = not self._autopilot_enabled
-                    print('autopilot toggled: {}'.format(self._autopilot_enabled))
-                    actor.set_autopilot(self._autopilot_enabled)
+                    if self._agent_controlled:
+                        self._agent_autopilot_enabled = not self._agent_autopilot_enabled
+                        print ('Agent autopilot toggled {}'.format(self._agent_autopilot_enabled))
+                    else:
+                        self._autopilot_enabled = not self._autopilot_enabled
+                        print('autopilot toggled: {}'.format(self._autopilot_enabled))
+                        actor.set_autopilot(self._autopilot_enabled)
 
             elif event.type == pygame.KEYUP:
                 if self._is_quit_shortcut(event.key):
@@ -138,10 +158,14 @@ class DualControl(object):
                     elif self._control.manual_gear_shift and event.key == K_PERIOD:
                         self._control.gear = self._control.gear + 1
                     elif event.key == K_p:
-                        self._autopilot_enabled = not self._autopilot_enabled
-                        print('autopilot toggled: {}'.format(self._autopilot_enabled))
-                        actor.set_autopilot(self._autopilot_enabled)
-                        print('Autopilot %s' % ('On' if self._autopilot_enabled else 'Off'))
+                        if self._agent_controlled:
+                            self._agent_autopilot_enabled = not self._agent_autopilot_enabled
+                            print ('Agent autopilot toggled {}'.format(self._agent_autopilot_enabled))
+                        else:
+                            self._autopilot_enabled = not self._autopilot_enabled
+                            print('autopilot toggled: {}'.format(self._autopilot_enabled))
+                            actor.set_autopilot(self._autopilot_enabled)
+                            print('Autopilot %s' % ('On' if self._autopilot_enabled else 'Off'))
                         # self._world.hud.notification('Autopilot %s' % ('On' if self._autopilot_enabled else 'Off'))
 
 
@@ -256,19 +280,31 @@ class DualControl(object):
 
         # disable autopilot when steering brake or throttle input is detected
         if steerCmd > 0.004444 and self._autopilot_enabled:  # about 2 degrees of steering input
-           self._autopilot_enabled = False
-           print('steering input triggers autopilot toggled: {}'.format(self._autopilot_enabled))
-           actor.set_autopilot(self._autopilot_enabled)
+            if self._agent_controlled == True:
+                self._agent_autopilot_enabled = False
+                print('steering input triggers autopilot toggled: {}'.format(self._agent_autopilot_enabled))
+            else:
+                self._autopilot_enabled = False
+                print('steering input triggers autopilot toggled: {}'.format(self._autopilot_enabled))
+                actor.set_autopilot(self._autopilot_enabled)
 
         if brakeCmd > 0.10 and self._autopilot_enabled:  # about 10 percent of brake input
-           self._autopilot_enabled = False
-           print('brakeCmd input triggers autopilot toggled: {}'.format(self._autopilot_enabled))
-           actor.set_autopilot(self._autopilot_enabled)
+            if self._agent_controlled == True:
+                self._agent_autopilot_enabled = False
+                print('steering input triggers autopilot toggled: {}'.format(self._agent_autopilot_enabled))
+            else:
+                self._autopilot_enabled = False
+                print('steering input triggers autopilot toggled: {}'.format(self._autopilot_enabled))
+                actor.set_autopilot(self._autopilot_enabled)
 
         if throttleCmd > 0.10 and self._autopilot_enabled:  # about 10 percent of throttle input
-           self._autopilot_enabled = False
-           print('throttleCmd input triggers autopilot toggled: {}'.format(self._autopilot_enabled))
-           actor.set_autopilot(self._autopilot_enabled)
+            if self._agent_controlled == True:
+                self._agent_autopilot_enabled = False
+                print('steering input triggers autopilot toggled: {}'.format(self._agent_autopilot_enabled))
+            else:
+                self._autopilot_enabled = False
+                print('steering input triggers autopilot toggled: {}'.format(self._autopilot_enabled))
+                actor.set_autopilot(self._autopilot_enabled)
 
 
 
