@@ -207,7 +207,7 @@ def main(args):
         sensor_list.append(mirror_right)
 
 
-        controller = DualControl(vehicle, start_in_autopilot=False)
+        controller = DualControl(vehicle, world=world, start_in_autopilot=False)
 
         if args.scenario:
             bike_crossing = BikeCrossing()

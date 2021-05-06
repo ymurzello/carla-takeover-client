@@ -43,6 +43,7 @@ import math
 
 class DualControl(object):
     def __init__(self, actor, world=None, start_in_autopilot=False):
+        self._world = world
         self._autopilot_enabled = start_in_autopilot
         if isinstance(actor, carla.Vehicle):
             self._control = carla.VehicleControl()
@@ -140,7 +141,8 @@ class DualControl(object):
                         self._autopilot_enabled = not self._autopilot_enabled
                         print('autopilot toggled: {}'.format(self._autopilot_enabled))
                         actor.set_autopilot(self._autopilot_enabled)
-                        world.hud.notification('Autopilot %s' % ('On' if self._autopilot_enabled else 'Off'))
+                        print('Autopilot %s' % ('On' if self._autopilot_enabled else 'Off'))
+                        # self._world.hud.notification('Autopilot %s' % ('On' if self._autopilot_enabled else 'Off'))
 
 
         if not self._autopilot_enabled:
