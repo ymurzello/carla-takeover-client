@@ -46,6 +46,8 @@ try:
 except ImportError:
     raise RuntimeError('cannot import numpy, make sure numpy package is installed')
 
+AUTOPILOT_DESTINATION = carla.Location(83.342, -136.286, 8.047)
+
 MIRROR_W = 350
 MIRROR_H = 200
 
@@ -134,7 +136,7 @@ def main(args):
     # This agent will drive the autopilot to certain destination
     behaviour_agent = None
     is_agent_controlled = False
-    prev_autopilot = False
+    prev_agent_autopilot_enabled = False
 
     try:
         m = world.get_map()
@@ -306,42 +308,25 @@ def main(args):
 
                 affordance = (heading_error, delta_y, curvature, dist_to_car, dist_to_walker)
 
+
+
                 '''
                 behaviour agent begin
                 '''
-                # print (" location: {}".format(behaviour_agent.vehicle.get_location()))
-
-                # if controller._autopilot_enabled == True:
-                #     if is_agent_controlled == False:
-                #         # Let the behaviour agent control the ego vehicle 
-                #         destination = carla.Location(83.342, -136.286, 8.047)
-                #         behaviour_agent.set_destination(behaviour_agent.vehicle.get_location(), destination, clean=True)
-                #         is_agent_controlled = True
-                #         world.player = vehicle
-                #         print ("Autopilot is controlled by BehaviourAgent to destination: {}".format(destination))
-                # else:
-                #     is_agent_controlled = False
-
-                # if frame_count < 101 :
-                #     frame_count += 1
-                #     print (frame_count)
-
                 if controller._agent_autopilot_enabled == True:
-                    if prev_autopilot == False:
-                        # Set agent;s destination  
-                        print ("Init agent from location : {}".format(behaviour_agent.vehicle.get_location()))
-                        destination = carla.Location(83.342, -136.286, 8.047)
-                        behaviour_agent.set_destination(behaviour_agent.vehicle.get_location(), destination, clean=True)
-                        print ("Autopilot is controlled by BehaviourAgent to destination: {}".format(destination))
+                    if prev_agent_autopilot_enabled == False:
+                        # Set agent's destination  
+                        behaviour_agent.set_destination(behaviour_agent.vehicle.get_location(), AUTOPILOT_DESTINATION, clean=True)
+                        print ("Autopilot is controlled by BehaviourAgent to destination: {}".format(AUTOPILOT_DESTINATION))
 
                     behaviour_agent.update_information(world)
 
-                    if len(behaviour_agent.get_local_planner().waypoints_queue) < 4:
+                    if len(behaviour_agent.get_local_planner().waypoints_queue) < 4: # For destination precision change this value
                         print("Target almost reached, mission accomplished...")
                         controller._agent_autopilot_enabled = False
                         behaviour_agent.set_destination(behaviour_agent.vehicle.get_location(), behaviour_agent.vehicle.get_location(), clean=True)
-                    # else:
-                    #     print("{}  more waypoints till destination si reached".format(len(behaviour_agent.get_local_planner().waypoints_queue)))
+                    else:
+                        print("Autopilot driving {}  more waypoints till destination is reached".format(len(behaviour_agent.get_local_planner().waypoints_queue)))
 
                     # speed_limit = world.player.get_speed_limit()
                     # print ("speed_limit: {}".format(speed_limit))
@@ -350,14 +335,11 @@ def main(args):
                     input_control = behaviour_agent.run_step()
                     world.player.apply_control(input_control)
 
-
-                prev_autopilot = controller._agent_autopilot_enabled
-
-                 #controller._autopilot_enabled
-
+                prev_agent_autopilot_enabled = controller._agent_autopilot_enabled
                 '''
                 behaviour agent end
                 '''
+
 
                 '''
                 scenario logic
