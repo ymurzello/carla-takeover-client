@@ -76,9 +76,10 @@ def draw_image(surface, image, blend=False):
         image_surface.set_alpha(100)
     surface.blit(image_surface, (MIRROR_W, 0))
 
-def draw_cam(surface, image, u, v):
+def draw_cam(surface, image, u, v, flip=True):
     array = image_np(image)
-    array = np.fliplr(array)
+    if flip == True:
+        array = np.fliplr(array)
     image_surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
     #surface.blit(image_surface,(0,DISPLAY_H-FRONT_H))
     surface.blit(image_surface,(u,v))
@@ -163,13 +164,18 @@ def main(args):
 
         #spawn spectator cam
         cam_bp = blueprint_library.find('sensor.camera.rgb')
-        cam_bp.set_attribute('image_size_x', str(DISPLAY_W))
-        cam_bp.set_attribute('image_size_y', str(DISPLAY_H))
+        cam_bp.set_attribute('image_size_x', str(SCREEN_W))
+        cam_bp.set_attribute('image_size_y', str(SCREEN_H))
         #cam_bp.set_attribute('sensor_tick',str(FREQ))
         camera_rgb = world.spawn_actor(
             cam_bp,
-            #carla.Transform(carla.Location(x=-5.2, z=3.3), carla.Rotation(pitch=10)),
-            carla.Transform(carla.Location(x=1, z=1), carla.Rotation(yaw=180, pitch=-50)),
+            # carla.Transform(carla.Location(x=-5.2, z=3.3), carla.Rotation(pitch=10)), # top view
+            carla.Transform(carla.Location(x=5.2, y=0.4, z=0.9), carla.Rotation(yaw=190, pitch=-5)),
+            # carla.Transform(carla.Location(x=-0.15,y=-0.4, z=1.2), carla.Rotation(pitch=10)), 
+
+            # carla.Transform(carla.Location(x=0.5, z=1), carla.Rotation(pitch=10)),
+            # carla.Transform(carla.Location(x=2, y=0, z=1), carla.Rotation(yaw=180, pitch=-50)),
+            # carla.Transform(carla.Location(x=2, y=0, z=1), carla.Rotation(yaw=180, pitch=-50)),
             attach_to=vehicle,
             attachment_type=carla.AttachmentType.SpringArm)
 
@@ -238,6 +244,8 @@ def main(args):
         #initial hlc
         hlc = 2
 
+        camera_rgb.set_transform(carla.Transform(carla.Location(x=5.4, y=0.35, z=0.9), carla.Rotation(yaw=180, pitch=-5)))
+
         # Create a synchronous mode context.
         #SENSORS SHOULD BE PASSED IN THE SAME ORDER AS IN ACTOR_LIST
         with CarlaSyncMode(world, vehicle, m, *sensor_list, fps=FREQ, record=args.record, scenario=args.scenario) as sync_mode:
@@ -273,6 +281,8 @@ def main(args):
                 trans = vehicle.get_transform()
                 #print('{:.3f}, {:.3f}'.format(trans.location.x, trans.location.y))
 
+
+                # camera_rgb.set_transform(carla.Transform(carla.Location(x=controller.cameraX, y=0.4, z=controller.cameraZ), carla.Rotation(yaw=180, pitch=-5)))
 
                 closest_wp = m.get_waypoint(trans.location)
                 draw_loc = closest_wp.transform.location+carla.Location(z=2)
@@ -417,10 +427,11 @@ def main(args):
 
                 # Draw the display.
                 display.fill((0,0,0), rect=fill_rect)
-                draw_image(display, image_rgb)
+                # draw_image(display, image_rgb)
+                draw_cam(display, image_rgb, 0, 0, False)
                 draw_cam(display, image_front, (SCREEN_W/2)-FRONT_W/2, 0)
-                draw_cam(display, image_mirror_left, 0, SCREEN_H-MIRROR_H)
-                draw_cam(display, image_mirror_right, MIRROR_W+DISPLAY_W, SCREEN_H-MIRROR_H)
+                draw_cam(display, image_mirror_left, 0, 0)
+                draw_cam(display, image_mirror_right, MIRROR_W+DISPLAY_W, 0)
 
                 if flash_on:
                     display.blit(
@@ -429,39 +440,47 @@ def main(args):
                     display.blit(wheel_icon, (SCREEN_W//2-64,SCREEN_H//2 + 64))
 
 
-                display.blit(
-                    font.render('% 5d FPS (real)' % clock.get_fps(), True, (255, 255, 255)),
-                    (8, 10))
-                display.blit(
-                    font.render('% 5d FPS (simulated)' % fps, True, (255, 255, 255)),
-                    (8, 28))
-                display.blit(
-                    font.render('steer: {0:2.2f}, brake: {1:2.2f}, gas: {2:2.2f}'.format(control_states.steer,control_states.brake,control_states.throttle), False, (255, 255, 255)),
-                    (8, 46))
-                display.blit(
-                    font.render('% 5d Gear' % control_states.gear, False, (255, 255, 255)),
-                    (8, 64))
-                hlc_text = font_big.render('% s' % hlc_string(hlc), False, (255, 99, 71))
-                hlc_width = hlc_text.get_rect().width
-                display.blit(
-                    font.render('% 5d Heading Error [deg]' % heading_error, False, (255, 255, 255)),
-                    (8, 118))
-                display.blit(
-                    font.render('% .2f CTE [m]' % delta_y, False, (255, 255, 255)),
-                    (8, 136))
-                display.blit(
-                    font.render('% .2f Curvature' % curvature, False, (255, 255, 255)),
-                    (8, 154))
-                display.blit(
-                    font.render('% .2f Dist to car' % dist_to_car, False, (255, 255, 255)),
-                    (8, 172))
-                display.blit(
-                    font.render('% .2f Dist to pedestrian' % dist_to_walker, False, (255, 255, 255)),
-                    (8, 190))
+                # display.blit(
+                #     font.render('% 5d FPS (real)' % clock.get_fps(), True, (255, 255, 255)),
+                #     (8, 10))
+                # display.blit(
+                #     font.render('% 5d FPS (simulated)' % fps, True, (255, 255, 255)),
+                #     (8, 28))
+                # display.blit(
+                #     font.render('steer: {0:2.2f}, brake: {1:2.2f}, gas: {2:2.2f}'.format(control_states.steer,control_states.brake,control_states.throttle), False, (255, 255, 255)),
+                #     (8, 46))
+                # display.blit(
+                #     font.render('% 5d Gear' % control_states.gear, False, (255, 255, 255)),
+                #     (8, 64))
+                # hlc_text = font_big.render('% s' % hlc_string(hlc), False, (255, 99, 71))
+                # hlc_width = hlc_text.get_rect().width
+                # display.blit(
+                #     font.render('% 5d Heading Error [deg]' % heading_error, False, (255, 255, 255)),
+                #     (8, 118))
+                # display.blit(
+                #     font.render('% .2f CTE [m]' % delta_y, False, (255, 255, 255)),
+                #     (8, 136))
+                # display.blit(
+                #     font.render('% .2f Curvature' % curvature, False, (255, 255, 255)),
+                #     (8, 154))
+                # display.blit(
+                #     font.render('% .2f Dist to car' % dist_to_car, False, (255, 255, 255)),
+                #     (8, 172))
+                # display.blit(
+                #     font.render('% .2f Dist to pedestrian' % dist_to_walker, False, (255, 255, 255)),
+                #     (8, 190))
 
                 display.blit(
-                    font_big.render('% 5d' % vx_kph, False, (0, 255, 255)),
-                    ((SCREEN_W/2)-60, SCREEN_H-50))
+                    font_big.render('Speed: % 5d km/h' % vx_kph, False, (255, 255, 255)),
+                    (10, SCREEN_H-50))
+
+                autopilot_str_val = 'OFF'
+                if controller._agent_autopilot_enabled == True: 
+                    autopilot_str_val = 'ON'
+                display.blit(
+                    font_big.render('Autopilot: ' + autopilot_str_val, False, (255, 125, 255)),
+                    (10, SCREEN_H-100))
+
                 pygame.display.flip()
 
     except Exception as exception:
