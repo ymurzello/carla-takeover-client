@@ -61,7 +61,7 @@ SCREEN_H = max(DISPLAY_H, MIRROR_H)
 FRONT_W = 300
 FRONT_H = 60
 
-FREQ = 15
+FREQ = 30
 
 def image_np(image):
     array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
