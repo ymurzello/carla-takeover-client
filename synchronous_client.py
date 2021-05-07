@@ -48,6 +48,7 @@ except ImportError:
     raise RuntimeError('cannot import numpy, make sure numpy package is installed')
 
 AUTOPILOT_DESTINATION = carla.Location(83.342, -136.286, 8.047)
+MAIN_CAMERA_TRANSFORM = carla.Transform(carla.Location(x=5.3, y=0.35, z=0.9), carla.Rotation(yaw=180, pitch=-5))
 
 MIRROR_W = 350
 MIRROR_H = 200
@@ -169,13 +170,7 @@ def main(args):
         #cam_bp.set_attribute('sensor_tick',str(FREQ))
         camera_rgb = world.spawn_actor(
             cam_bp,
-            # carla.Transform(carla.Location(x=-5.2, z=3.3), carla.Rotation(pitch=10)), # top view
-            carla.Transform(carla.Location(x=5.2, y=0.4, z=0.9), carla.Rotation(yaw=190, pitch=-5)),
-            # carla.Transform(carla.Location(x=-0.15,y=-0.4, z=1.2), carla.Rotation(pitch=10)), 
-
-            # carla.Transform(carla.Location(x=0.5, z=1), carla.Rotation(pitch=10)),
-            # carla.Transform(carla.Location(x=2, y=0, z=1), carla.Rotation(yaw=180, pitch=-50)),
-            # carla.Transform(carla.Location(x=2, y=0, z=1), carla.Rotation(yaw=180, pitch=-50)),
+            MAIN_CAMERA_TRANSFORM,
             attach_to=vehicle,
             attachment_type=carla.AttachmentType.SpringArm)
 
@@ -229,7 +224,7 @@ def main(args):
 
         if args.scenario:
             bike_crossing = BikeCrossing()
-            bike_crossing.load_config('scenario_configs/bike.json')
+            bike_crossing.load_config(args.scenario_config)
             bike_crossing.spawn_npcs()
             trigger_distances = bike_crossing.get_distances()
             beep = pygame.mixer.Sound('assets/sounds/bell.wav')
@@ -244,7 +239,7 @@ def main(args):
         #initial hlc
         hlc = 2
 
-        camera_rgb.set_transform(carla.Transform(carla.Location(x=5.3, y=0.35, z=0.9), carla.Rotation(yaw=180, pitch=-5)))
+        camera_rgb.set_transform(MAIN_CAMERA_TRANSFORM)
 
         # Create a synchronous mode context.
         #SENSORS SHOULD BE PASSED IN THE SAME ORDER AS IN ACTOR_LIST
@@ -334,7 +329,7 @@ def main(args):
 
                     behaviour_agent.update_information(world)
 
-                    if len(behaviour_agent.get_local_planner().waypoints_queue) < 4: # For destination precision change this value
+                    if len(behaviour_agent.get_local_planner().waypoints_queue) <= 1: # For destination precision change this value
                         print("Target almost reached, mission accomplished...")
                         controller._agent_autopilot_enabled = False
                         behaviour_agent.set_destination(behaviour_agent.vehicle.get_location(), behaviour_agent.vehicle.get_location(), clean=True)
