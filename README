@@ -1,0 +1,6 @@
+
+How to use saved_json_to_csv.py script
+Assuming that the saved record json files are in "Saved/05_07_2021_21_01_56_Town03/targets" 
+and you want to export the csv into Saved/out.csv, run the following command: 
+
+python saved_json_to_csv.py --json_dir Saved/05_07_2021_21_01_56_Town03/targets --csv_out Saved/out.csv
