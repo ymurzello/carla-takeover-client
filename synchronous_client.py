@@ -439,6 +439,13 @@ def main(args):
                         (SCREEN_W//2-265, SCREEN_H//2))
                     display.blit(wheel_icon, (SCREEN_W//2-64,SCREEN_H//2 + 64))
 
+                display.blit(
+                    font.render('steer: {0:2.2f}, brake: {1:2.2f}, gas: {2:2.2f}'.format(control_states.steer,control_states.brake,control_states.throttle), False, (255, 255, 255)),
+                    (8, 20))
+                display.blit(
+                    font.render('% 5d Gear' % control_states.gear, False, (255, 255, 255)),
+                    (8, 40))
+
 
                 display.blit(
                     font_big.render('Speed: % 5d km/h' % vx_kph, False, (255, 255, 255)),
