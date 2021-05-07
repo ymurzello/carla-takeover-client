@@ -430,8 +430,8 @@ def main(args):
                 # draw_image(display, image_rgb)
                 draw_cam(display, image_rgb, 0, 0, False)
                 draw_cam(display, image_front, (SCREEN_W/2)-FRONT_W/2, 0)
-                draw_cam(display, image_mirror_left, 0, 0)
-                draw_cam(display, image_mirror_right, MIRROR_W+DISPLAY_W, 0)
+                draw_cam(display, image_mirror_left, 0, SCREEN_H - MIRROR_H)
+                draw_cam(display, image_mirror_right, MIRROR_W+DISPLAY_W, SCREEN_H - MIRROR_H)
 
                 if flash_on:
                     display.blit(
@@ -472,14 +472,14 @@ def main(args):
 
                 display.blit(
                     font_big.render('Speed: % 5d km/h' % vx_kph, False, (255, 255, 255)),
-                    (10, SCREEN_H-50))
+                    (SCREEN_W * 0.6, SCREEN_H - 50))
 
                 autopilot_str_val = 'OFF'
                 if controller._agent_autopilot_enabled == True: 
                     autopilot_str_val = 'ON'
                 display.blit(
                     font_big.render('Autopilot: ' + autopilot_str_val, False, (255, 125, 255)),
-                    (10, SCREEN_H-100))
+                    (SCREEN_W * 0.6, SCREEN_H - 100))
 
                 pygame.display.flip()
 
