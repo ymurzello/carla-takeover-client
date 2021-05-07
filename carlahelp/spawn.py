@@ -21,7 +21,7 @@ def simple_spawn(search=None):
     vehicles = blueprint_library.filter(search)
     car_bp = vehicles[0]
     #car_bp.set_attribute('color','255,20,147')
-    car_bp.set_attribute('color','158,255,0')
+    # car_bp.set_attribute('color','158,255,0')
 
     #select camera blueprint, set location
     cam_bp = blueprint_library.find('sensor.camera.rgb')
@@ -137,7 +137,7 @@ def spawn_3cam(car, img_x=200, img_y=88, yaw_deg=20, hz=0.2):
     return [left, center, right]
 
 if __name__=="__main__":
-    car, camera = simple_spawn('vehicle.ford.*')
+    car, camera = simple_spawn('vehicle.tesla.*')
     pc = car.get_physics_control()
     for d in dir(pc):
         print(d, pc.__getattribute__(d))

@@ -61,7 +61,7 @@ SCREEN_H = max(DISPLAY_H, MIRROR_H)
 FRONT_W = 300
 FRONT_H = 60
 
-FREQ = 30
+FREQ = 20
 
 def image_np(image):
     array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
@@ -244,7 +244,7 @@ def main(args):
         #initial hlc
         hlc = 2
 
-        camera_rgb.set_transform(carla.Transform(carla.Location(x=5.4, y=0.35, z=0.9), carla.Rotation(yaw=180, pitch=-5)))
+        camera_rgb.set_transform(carla.Transform(carla.Location(x=5.3, y=0.35, z=0.9), carla.Rotation(yaw=180, pitch=-5)))
 
         # Create a synchronous mode context.
         #SENSORS SHOULD BE PASSED IN THE SAME ORDER AS IN ACTOR_LIST
