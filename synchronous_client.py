@@ -327,7 +327,7 @@ def main(args):
                         # Workaround to prevent app crash
                         world.player = vehicle
                         # Init the agent
-                        behaviour_agent = BehaviorAgent(vehicle, ignore_traffic_light=True, behavior="cautious")
+                        behaviour_agent = BehaviorAgent(vehicle, ignore_traffic_light=False, behavior="cautious")
                         # Set agent's destination  
                         behaviour_agent.set_destination(behaviour_agent.vehicle.get_location(), AUTOPILOT_DESTINATION, clean=True)
                         print ("Autopilot is controlled by BehaviourAgent to destination: {}".format(AUTOPILOT_DESTINATION))
@@ -439,36 +439,6 @@ def main(args):
                         (SCREEN_W//2-265, SCREEN_H//2))
                     display.blit(wheel_icon, (SCREEN_W//2-64,SCREEN_H//2 + 64))
 
-
-                # display.blit(
-                #     font.render('% 5d FPS (real)' % clock.get_fps(), True, (255, 255, 255)),
-                #     (8, 10))
-                # display.blit(
-                #     font.render('% 5d FPS (simulated)' % fps, True, (255, 255, 255)),
-                #     (8, 28))
-                # display.blit(
-                #     font.render('steer: {0:2.2f}, brake: {1:2.2f}, gas: {2:2.2f}'.format(control_states.steer,control_states.brake,control_states.throttle), False, (255, 255, 255)),
-                #     (8, 46))
-                # display.blit(
-                #     font.render('% 5d Gear' % control_states.gear, False, (255, 255, 255)),
-                #     (8, 64))
-                # hlc_text = font_big.render('% s' % hlc_string(hlc), False, (255, 99, 71))
-                # hlc_width = hlc_text.get_rect().width
-                # display.blit(
-                #     font.render('% 5d Heading Error [deg]' % heading_error, False, (255, 255, 255)),
-                #     (8, 118))
-                # display.blit(
-                #     font.render('% .2f CTE [m]' % delta_y, False, (255, 255, 255)),
-                #     (8, 136))
-                # display.blit(
-                #     font.render('% .2f Curvature' % curvature, False, (255, 255, 255)),
-                #     (8, 154))
-                # display.blit(
-                #     font.render('% .2f Dist to car' % dist_to_car, False, (255, 255, 255)),
-                #     (8, 172))
-                # display.blit(
-                #     font.render('% .2f Dist to pedestrian' % dist_to_walker, False, (255, 255, 255)),
-                #     (8, 190))
 
                 display.blit(
                     font_big.render('Speed: % 5d km/h' % vx_kph, False, (255, 255, 255)),
