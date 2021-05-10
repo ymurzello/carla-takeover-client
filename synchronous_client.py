@@ -48,7 +48,12 @@ except ImportError:
     raise RuntimeError('cannot import numpy, make sure numpy package is installed')
 
 AUTOPILOT_DESTINATION = carla.Location(83.342, -136.286, 8.047)
-MAIN_CAMERA_TRANSFORM = carla.Transform(carla.Location(x=5.3, y=0.35, z=0.9), carla.Rotation(yaw=180, pitch=-5))
+
+# Use this for top view camera transform
+# MAIN_CAMERA_TRANSFORM = carla.Transform(carla.Location(x=-5.2, z=3.3), carla.Rotation(pitch=10))
+
+# Use this for hood view camera transform
+MAIN_CAMERA_TRANSFORM = carla.Transform(carla.Location(x=1, z=1), carla.Rotation(pitch=-50, yaw=180))
 
 MIRROR_W = 350
 MIRROR_H = 200
@@ -239,8 +244,6 @@ def main(args):
         #initial hlc
         hlc = 2
 
-        camera_rgb.set_transform(MAIN_CAMERA_TRANSFORM)
-
         # Create a synchronous mode context.
         #SENSORS SHOULD BE PASSED IN THE SAME ORDER AS IN ACTOR_LIST
         with CarlaSyncMode(world, vehicle, m, *sensor_list, fps=FREQ, record=args.record, scenario=args.scenario) as sync_mode:
@@ -276,9 +279,7 @@ def main(args):
                 trans = vehicle.get_transform()
                 #print('{:.3f}, {:.3f}'.format(trans.location.x, trans.location.y))
 
-
-                # camera_rgb.set_transform(carla.Transform(carla.Location(x=controller.cameraX, y=0.4, z=controller.cameraZ), carla.Rotation(yaw=180, pitch=-5)))
-
+                
                 closest_wp = m.get_waypoint(trans.location)
                 draw_loc = closest_wp.transform.location+carla.Location(z=2)
                 #sync_mode.world.debug.draw_point(draw_loc, life_time=0.05)

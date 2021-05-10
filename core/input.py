@@ -117,12 +117,6 @@ class DualControl(object):
 
         self.hlc_state = 2
 
-        self.cameraX = 5.05
-        self.cameraY = 0.4
-        self.cameraZ = 0.9
-        self.cameraPitch = 0
-        self.cameraYaw = 180
-
     def parse_events(self, actor, clock):
         '''
         this parses everything
@@ -173,18 +167,6 @@ class DualControl(object):
                             actor.set_autopilot(self._autopilot_enabled)
                             print('Autopilot %s' % ('On' if self._autopilot_enabled else 'Off'))
                         # self._world.hud.notification('Autopilot %s' % ('On' if self._autopilot_enabled else 'Off'))
-                    elif event.key == K_UP:
-                        self.cameraX += 0.05
-                        # self.cameraPitch += 5
-                    elif event.key == K_DOWN:
-                        self.cameraX -= 0.05
-                        # self.cameraPitch -= 5
-                    elif event.key == K_LEFT:
-                        self.cameraZ += 0.05
-                        self.cameraYaw += 5
-                    elif event.key == K_RIGHT:
-                        self.cameraZ -= 0.05
-                        self.cameraYaw -= 5
 
         if not self._autopilot_enabled:
             if isinstance(self._control, carla.VehicleControl):
