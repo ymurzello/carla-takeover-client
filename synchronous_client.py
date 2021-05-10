@@ -47,7 +47,8 @@ try:
 except ImportError:
     raise RuntimeError('cannot import numpy, make sure numpy package is installed')
 
-AUTOPILOT_DESTINATION = carla.Location(83.342, -136.286, 8.047)
+# AUTOPILOT_DESTINATION = carla.Location(83.342, -136.286, 8.047)
+AUTOPILOT_DESTINATION = carla.Location(x=84.246834, y=-116.759926, z=7.994661)
 
 # Use this for top view camera transform
 # MAIN_CAMERA_TRANSFORM = carla.Transform(carla.Location(x=-5.2, z=3.3), carla.Rotation(pitch=10))
@@ -67,7 +68,7 @@ SCREEN_H = max(DISPLAY_H, MIRROR_H)
 FRONT_W = 300
 FRONT_H = 60
 
-FREQ = 20
+FREQ = 15
 
 def image_np(image):
     array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
@@ -330,19 +331,15 @@ def main(args):
 
                     behaviour_agent.update_information(world)
 
-                    if len(behaviour_agent.get_local_planner().waypoints_queue) <= 1: # For destination precision change this value
+                    print("Autopilot driving {}  more waypoints till destination is reached".format(len(behaviour_agent.get_local_planner().waypoints_queue)))
+                    
+                    if len(behaviour_agent.get_local_planner().waypoints_queue) <= 0: # For destination precision change this value
                         print("Target almost reached, mission accomplished...")
                         controller._agent_autopilot_enabled = False
                         behaviour_agent.set_destination(behaviour_agent.vehicle.get_location(), behaviour_agent.vehicle.get_location(), clean=True)
-                    # else:
-                        # print("Autopilot driving {}  more waypoints till destination is reached".format(len(behaviour_agent.get_local_planner().waypoints_queue)))
-
-                    # speed_limit = world.player.get_speed_limit()
-                    # print ("speed_limit: {}".format(speed_limit))
-                    # behaviour_agent.get_local_planner().set_speed(150)
-
-                    input_control = behaviour_agent.run_step()
-                    world.player.apply_control(input_control)
+                    else:
+                        input_control = behaviour_agent.run_step()
+                        world.player.apply_control(input_control)
 
                 prev_agent_autopilot_enabled = controller._agent_autopilot_enabled
                 '''
