@@ -20,6 +20,7 @@ from carlahelp.filehelp import make_file_name, date_string, save_as_json, read_j
 from core.input import DualControl
 from core.sync_mode import CarlaSyncMode
 from scenario_class.bike_crossing_scenario import BikeCrossing
+from scenario_class.car_crash_scenario import CarCrashScenario
 
 '''
 To be able to use this import please add the following environment variable: PYTHONPATH=%CARLA_ROOT%/PythonAPI/carla 
@@ -148,6 +149,9 @@ def main(args):
     is_agent_controlled = False
     prev_agent_autopilot_enabled = False
 
+    scenario_instance = None
+    scenario_class = None
+
     try:
         m = world.get_map()
 
@@ -231,7 +235,13 @@ def main(args):
         controller = DualControl(vehicle, world=world, start_in_autopilot=False, agent_controlled=True)
 
         if args.scenario:
-            scenario_instance = BikeCrossing()
+            scenario_config_json = read_json_config(args.scenario_config)
+            scenario_class = scenario_config_json["class"]
+            if scenario_class == "BikeCrossing":
+                scenario_instance = BikeCrossing()
+            elif scenario_class == "CarCrashScenario":
+                scenario_instance = CarCrashScenario()
+
             scenario_instance.load_config(args.scenario_config)
             scenario_instance.spawn_npcs()
             trigger_distances = scenario_instance.get_distances()
@@ -350,7 +360,7 @@ def main(args):
                 '''
                 scenario logic
                 '''
-                if sync_mode.scenario:
+                if sync_mode.scenario and scenario_class == "BikeCrossing":
                     
                     print ("sync_mode_scenario stage {}".format(stage))
 
@@ -468,7 +478,8 @@ def main(args):
     finally:
         print('destroying actors.')
         if args.scenario:
-            bike_crossing.kill_npcs()
+            if scenario_instance is not None:
+                scenario_instance.kill_npcs()
         for actor in actor_list:
             actor.destroy()
 

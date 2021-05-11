@@ -1,0 +1,23 @@
+{
+    "class": "CarCrashScenario",
+    "vehicles": {
+      "0": {
+        "x": "230.122",
+        "y": "32.542",
+        "z": "0.1",
+        "yaw": "93.07",
+        "pitch": "0.09",
+        "roll": "-0.02",
+        "actor_type": "vehicle.tesla.model3"
+      },
+      "1": {
+        "x": "228.197",
+        "y": "37.603",
+        "z": "0.1",
+        "yaw": "-62",
+        "pitch": "0.067",
+        "roll": "-0.05",
+        "actor_type": "vehicle.tesla.model3"
+      }
+    }
+  }

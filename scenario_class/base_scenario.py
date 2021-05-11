@@ -38,9 +38,10 @@ class BaseScenario:
     def get_distances(self):
         '''get event trigger distance'''
         dists = []
-        dist_dict = self.config['dist']
-        for idx, d in dist_dict.items():
-            dists.append(float(d))
+        if 'dist' in self.config:
+            dist_dict = self.config['dist']
+            for idx, d in dist_dict.items():
+                dists.append(float(d))
         return dists
 
 
@@ -75,7 +76,28 @@ class BaseScenario:
 
 
     def _spawn_vehicle(self, idx):
-        return
+        details = self.config['vehicles'][idx]
+
+        #get transform
+        x = float(details['x'])
+        y = float(details['y'])
+        z = float(details['z'])
+        yaw = float(details['yaw'])
+        pitch = float(details['pitch'])
+        roll = float(details['roll'])
+        loc = carla.Location(x,y,z)
+        rot = carla.Rotation(yaw=yaw, pitch=pitch, roll=roll)
+        trans = carla.Transform(location=loc, rotation=rot)
+
+        #spawn
+        bp = self.world.get_blueprint_library().find(details['actor_type'])
+        actor = self.world.try_spawn_actor(bp, trans)
+
+        if actor!=None:
+            self.actors_list.append(actor.id)
+        else:
+            self.world.debug.draw_point(loc, life_time=10)
+            print("bike idx {} did not spawn, possibly due to collision".format(idx))
 
 
     def _register_hero(self):

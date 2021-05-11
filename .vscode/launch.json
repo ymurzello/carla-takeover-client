@@ -1,0 +1,45 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Bike scenario",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "-s", "False",
+                "-r", "True",
+                "-sp", "spawn_configs/test3.json",
+                "-sc", "scenario_configs/bike.json"
+            ]
+        },
+        {
+            "name": "Car crash scenario",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "-s", "False",
+                "-r", "True",
+                "-sp", "spawn_configs/test3.json",
+                "-sc", "scenario_configs/carscrash.json"
+            ]
+        },
+        {
+            "name": "JSON to CSV",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "--json_dir", "Saved/05_07_2021_21_01_56_Town03/targets",
+                "--csv_out", "Saved/out.csv"
+            ]
+        }
+    ]
+}
