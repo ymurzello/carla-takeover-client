@@ -54,7 +54,8 @@ class DualControl(object):
         self._agent_controlled = agent_controlled
         self._agent_autopilot_enabled = False # Toggled only when agent_controlled == True 
         self._autopilot_enabled = False # Toggled only when agent_controlled == False
-        
+        self._world = world
+
         if start_in_autopilot == True:
             if self._agent_controlled:
                 self._agent_autopilot_enabled = True
@@ -167,6 +168,8 @@ class DualControl(object):
                             actor.set_autopilot(self._autopilot_enabled)
                             print('Autopilot %s' % ('On' if self._autopilot_enabled else 'Off'))
                         # self._world.hud.notification('Autopilot %s' % ('On' if self._autopilot_enabled else 'Off'))
+                    elif event.key == K_c:
+                        print("Current transform: {}".format(self._world.player.get_transform()))
 
         if not self._autopilot_enabled:
             if isinstance(self._control, carla.VehicleControl):
