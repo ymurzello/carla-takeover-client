@@ -22,6 +22,9 @@ class BaseScenario:
         self.hero_id = None
         self._register_hero()
 
+        self.pedestrian_target_list = list()
+        self.pedestrian_list = list()
+
 
     def load_config(self, path):
         '''read in config'''
@@ -69,11 +72,7 @@ class BaseScenario:
         else:
             self.world.debug.draw_point(loc, life_time=10)
             print("bike idx {} did not spawn, possibly due to collision".format(idx))
-
-
-    def _spawn_pedestrian(self, idx):
-        return
-
+      
 
     def _spawn_vehicle(self, idx):
         details = self.config['vehicles'][idx]
@@ -97,7 +96,68 @@ class BaseScenario:
             self.actors_list.append(actor.id)
         else:
             self.world.debug.draw_point(loc, life_time=10)
+            print("vehicle idx {} did not spawn, possibly due to collision".format(idx))
+
+
+    def _spawn_pedestrian(self, idx):
+        
+        details = self.config['pedestrians'][idx]
+        #get transform
+        x = float(details['x'])
+        y = float(details['y'])
+        z = float(details['z'])
+        yaw = float(details['yaw'])
+        pitch = float(details['pitch'])
+        roll = float(details['roll'])
+        loc = carla.Location(x,y,z)
+        rot = carla.Rotation(yaw=yaw, pitch=pitch, roll=roll)
+        trans = carla.Transform(location=loc, rotation=rot)
+
+        #spawn
+        bp = self.world.get_blueprint_library().find(details['actor_type'])
+        actor = self.world.try_spawn_actor(bp, trans)
+
+        if actor!=None:
+            self.actors_list.append(actor.id)
+
+            tx = float(details['t_x'])
+            ty = float(details['t_y'])
+            tz = float(details['t_z'])
+            speed = float(details['walker_speed'])
+            target_location = carla.Location(x=tx, y=ty, z=tz)
+            self.pedestrian_target_list.append((target_location, speed))
+            self.pedestrian_list.append(actor.id)
+
+        else:
+            self.world.debug.draw_point(loc, life_time=10)
             print("bike idx {} did not spawn, possibly due to collision".format(idx))
+
+
+    def enable_walker_ai(self):
+        '''
+        spawn and start autopilot for pedestrians
+        '''
+        self.ai_list = list()
+
+        batch = []
+        walker_ai_bp = self.world.get_blueprint_library().find('controller.ai.walker')
+        for id, target in zip(self.pedestrian_list, self.pedestrian_target_list):
+            walker = self.world.get_actor(id)
+            target_transform = carla.Transform(target[0], carla.Rotation())
+            batch.append(carla.command.SpawnActor(walker_ai_bp, target_transform, walker))
+        results = self.client.apply_batch_sync(batch, True)
+        for r in results:
+            if r.error:
+                print("walker control spawning error:", r.error)
+            else:
+                self.ai_list.append(r.actor_id)
+
+        actor_list_walker_control = self.world.get_actors(self.ai_list)
+        for i, a in enumerate(actor_list_walker_control):
+            a.start()
+            #if i>=5:
+                #break
+
 
 
     def _register_hero(self):

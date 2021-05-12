@@ -21,6 +21,7 @@ from core.input import DualControl
 from core.sync_mode import CarlaSyncMode
 from scenario_class.bike_crossing_scenario import BikeCrossing
 from scenario_class.car_crash_scenario import CarCrashScenario
+from scenario_class.pedestrian_crossing_scenario import PedestrianCrossing
 
 '''
 To be able to use this import please add the following environment variable: PYTHONPATH=%CARLA_ROOT%/PythonAPI/carla 
@@ -241,6 +242,8 @@ def main(args):
                 scenario_instance = BikeCrossing()
             elif scenario_class == "CarCrashScenario":
                 scenario_instance = CarCrashScenario()
+            elif scenario_class == "PedestrianCrossing":
+                scenario_instance = PedestrianCrossing()
 
             scenario_instance.load_config(args.scenario_config)
             scenario_instance.spawn_npcs()
@@ -360,7 +363,7 @@ def main(args):
                 '''
                 scenario logic
                 '''
-                if sync_mode.scenario and scenario_class == "BikeCrossing":
+                if sync_mode.scenario and (scenario_class == "BikeCrossing"):
                     
                     print ("sync_mode_scenario stage {}".format(stage))
 
@@ -412,7 +415,74 @@ def main(args):
                     elif stage == 3:
                         #stage 3, bike crossing still gets triggered
                         #but driver stays in control
-                        if bike_dist<trigger_distances[1]:
+                        if bike_dist > trigger_distances[1]:
+                            # scenario_instance.begin(carla.VehicleControl(throttle=0.3))
+                            stage = 4
+                        elif controller._agent_autopilot_enabled:
+                            stage = 1
+
+                    elif stage==4:
+                        #nothing happens in stage 4
+                        # print ("Scenario done, close it")
+                        # scenario_instance.kill_npcs()
+                        scenario_instance.kill_npcs()
+                        sync_mode.scenario = False
+                        pass
+
+                if sync_mode.scenario and (scenario_class == "PedestrianCrossing"):
+                    
+                    print ("sync_mode_scenario stage {}".format(stage))
+
+                    #check distance to pedestrian
+                    pedestrian_dist = scenario_instance.check_distance(trans.location)
+                    #if distance is below threshold, do something
+                    #first stage: flash warning
+                    #2nd stage: pedestrian starts crossing
+
+                    if stage==0:
+                        if pedestrian_dist < trigger_distances[0]:
+                            scenario_instance.begin()
+                            #stage 0 to 1 or 0 to 3 transition
+                            if controller._agent_autopilot_enabled:
+                                stage = 1
+                            else:
+                                stage = 3
+                    elif stage==1:
+                        #stage 1: play warning sound
+                        if snapshot.timestamp.elapsed_seconds - sound_time > 3:
+                            beep.play()
+                            sound_time = snapshot.timestamp.elapsed_seconds
+                        if snapshot.timestamp.elapsed_seconds - flash_time > 1.5:
+                            flash_on = not flash_on
+                            flash_time = snapshot.timestamp.elapsed_seconds
+
+                        if pedestrian_dist < trigger_distances[1]:
+                            flash_on = False
+                            #stage one to two transition
+                            # scenario_instance.begin()
+                            #disable autopilot
+                            controller._agent_autopilot_enabled = False
+                            print('autopilot toggled: {}'.format(controller._agent_autopilot_enabled))
+                            sync_mode.car.set_autopilot(controller._agent_autopilot_enabled)
+                            stage = 2
+                        elif controller._agent_autopilot_enabled == False:
+                            #stage 1 to 3 transition
+                            flash_on = False
+                            stage = 3
+                    elif stage==2:
+                        #delta, throttle, brake = driver.drive(heading_error, delta_y, vx, curvature, 28, min(dist_to_car, dist_to_walker))
+                        vc = carla.VehicleControl(throttle=0, steer=0, brake=0.02)
+                        sync_mode.car.apply_control(vc)
+
+                        v = vehicle.get_velocity()
+                        vx, vy = util.measure_forward_velocity(v, trans.rotation, return_both=True)
+                        if vx <= 0.1 :
+                            stage = 3
+                        
+                    elif stage == 3:
+                        #stage 3, pedestrian crossing still gets triggered
+                        #but driver stays in control
+                        if pedestrian_dist<trigger_distances[1]:
                             scenario_instance.begin(carla.VehicleControl(throttle=0.3))
                             stage = 4
                         elif controller._agent_autopilot_enabled:

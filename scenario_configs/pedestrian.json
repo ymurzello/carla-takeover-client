@@ -1,0 +1,22 @@
+{
+  "class": "PedestrianCrossing",
+  "dist": {
+    "1": "70",
+    "2": "20"
+  },
+  "pedestrians": {
+    "0": {
+      "x": "223.904129",
+      "y": "8.10171",
+      "z": "0.005027",
+      "yaw": "-89",
+      "pitch": "0",
+      "roll": "0",
+      "actor_type": "walker.pedestrian.0010",
+      "t_x": "223",
+      "t_y": "16",
+      "t_z": "0.05",
+      "walker_speed": "1.1130502822153154"
+    }
+  }
+}
