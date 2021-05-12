@@ -1,6 +1,8 @@
 #!/bin/bash
 
 spawn_config="spawn_configs/test3.json"
+# scenario_config="scenario_configs/pedestrian.json"
+# scenario_config="scenario_configs/carcrash.json"
 scenario_config="scenario_configs/bike.json"
 scenario_flag=false
 record_flag=false
