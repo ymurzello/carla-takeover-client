@@ -49,15 +49,16 @@ try:
 except ImportError:
     raise RuntimeError('cannot import numpy, make sure numpy package is installed')
 
-# AUTOPILOT_DESTINATION = carla.Location(83.342, -136.286, 8.047)
-# AUTOPILOT_DESTINATION = carla.Location(x=84.246834, y=-116.759926, z=7.994661)
+
 AUTOPILOT_DESTINATION = carla.Location(x=126.097374, y=125.237732, z=0.342617)
 
-# Use this for top view camera transform
-# MAIN_CAMERA_TRANSFORM = carla.Transform(carla.Location(x=-5.2, z=3.3), carla.Rotation(pitch=10))
+# Enable this to place the camera on dirvers view.
+DRIVERVIEW_CAMERA = False
 
-# Use this for hood view camera transform
 MAIN_CAMERA_TRANSFORM = carla.Transform(carla.Location(x=1, z=1), carla.Rotation(pitch=-50, yaw=180))
+
+if DRIVERVIEW_CAMERA == True:
+    MAIN_CAMERA_TRANSFORM = carla.Transform(carla.Location(x=5.3, y=0.35, z=0.9), carla.Rotation(yaw=180, pitch=-5))
 
 MIRROR_W = 350
 MIRROR_H = 200
@@ -235,7 +236,7 @@ def main(args):
         world.player = vehicle
         controller = DualControl(vehicle, world=world, start_in_autopilot=False, agent_controlled=True)
 
-        if args.scenario:
+        if args.scenario == True:
             scenario_config_json = read_json_config(args.scenario_config)
             scenario_class = scenario_config_json["class"]
             if scenario_class == "BikeCrossing":
@@ -259,6 +260,9 @@ def main(args):
 
         #initial hlc
         hlc = 2
+
+        if DRIVERVIEW_CAMERA == True:
+            camera_rgb.set_transform(MAIN_CAMERA_TRANSFORM)
 
         # Create a synchronous mode context.
         #SENSORS SHOULD BE PASSED IN THE SAME ORDER AS IN ACTOR_LIST
@@ -561,8 +565,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', '--record', type=bool, default=False)
     parser.add_argument('-s', '--scenario', type=bool, default=False)
-    parser.add_argument('-sp', '--spawn_config', type=str, default='spawn_configs/test2.json')
-    parser.add_argument('-sc', '--scenario_config', type=str, default='scenario_configs/bike.json')
+    parser.add_argument('-sp', '--spawn_config', type=str, default='')
+    parser.add_argument('-sc', '--scenario_config', type=str, default='')
     args = parser.parse_args()
 
     try:
