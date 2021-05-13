@@ -77,7 +77,7 @@ class NPCManager:
         x = float(details['x'])
         y = float(details['y'])
         #add to height so npc doesn't interfere with the ground
-        z = float(details['z'])+1.5
+        z = float(details['z']) + 2
         yaw = float(details['yaw'])
         pitch = float(details['pitch'])
         roll = float(details['roll'])
