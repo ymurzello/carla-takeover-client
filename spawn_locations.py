@@ -133,7 +133,12 @@ def generate_npc_ped_wp(ego_transform, map, r, n_peds, spawn_points=None):
 
     for loc in locations:
         loc = loc + ego_transform.location
-        wp_new = map.get_waypoint(loc, lane_type=carla.LaneType.Sidewalk)
+        wp_new = None
+        if map_name == "Town06":
+            wp_new = map.get_waypoint(loc, lane_type=carla.LaneType.Border)
+        else:
+            wp_new = map.get_waypoint(loc, lane_type=carla.LaneType.Sidewalk)
+        wp_new = map.get_waypoint(loc)
         for idx, sp in enumerate(spawn_points):
             if util.distance(sp.transform.location, wp_new.transform.location) < 8:
                 break
@@ -246,11 +251,13 @@ def finalize_spawn_info(car_spi, ped_spi, ego_wp, map):
     return data
 
 
+map_name = ""
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-cr', '--car-radius', type=int, default=70)
-    parser.add_argument('-cn', '--car-num', type=int, default=25)
-    parser.add_argument('-es', '--ego-spawn', type=int, default=247)
+    parser.add_argument('-cn', '--car-num', type=int, default=10)
+    parser.add_argument('-es', '--ego-spawn', type=int, default=0)
     parser.add_argument('-fn', '--front-num', type=int, default=0)
     parser.add_argument('-rn', '--rear-num', type=int, default=0)
     parser.add_argument('-pn', '--ped-num', type=int, default=4)
@@ -259,6 +266,7 @@ if __name__ == "__main__":
 
     client, world = util.link_server()
     map = world.get_map()
+    map_name = map.name
     bpl = world.get_blueprint_library()
     sp = map.get_spawn_points()[args.ego_spawn]
 
@@ -291,4 +299,4 @@ if __name__ == "__main__":
     pd = compile_spawn_info(ped_pairs)
 
     final_dict = finalize_spawn_info(cd, pd, ego_wp, map)
-    save_as_json('test3.json',final_dict)
+    save_as_json('test5.json',final_dict)
