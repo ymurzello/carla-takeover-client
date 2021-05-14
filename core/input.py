@@ -171,7 +171,7 @@ class DualControl(object):
                     elif event.key == K_c:
                         print("Current transform: {}".format(self._world.player.get_transform()))
 
-        if not self._autopilot_enabled:
+        if not self._autopilot_enabled and not self._agent_autopilot_enabled:
             if isinstance(self._control, carla.VehicleControl):
                 self._parse_vehicle_keys(pygame.key.get_pressed(), clock.get_time())
                 if self._has_wheel:
@@ -281,7 +281,7 @@ class DualControl(object):
         #self._control.hand_brake = bool(jsButtons[self._handbrake_idx])
 
         # disable autopilot when steering brake or throttle input is detected
-        if steerCmd > 0.004444 and self._autopilot_enabled:  # about 2 degrees of steering input
+        if steerCmd > 0.004444 and (self._autopilot_enabled or self._agent_autopilot_enabled):  # about 2 degrees of steering input
             if self._agent_controlled == True:
                 self._agent_autopilot_enabled = False
                 print('steering input triggers autopilot toggled: {}'.format(self._agent_autopilot_enabled))
@@ -290,7 +290,7 @@ class DualControl(object):
                 print('steering input triggers autopilot toggled: {}'.format(self._autopilot_enabled))
                 actor.set_autopilot(self._autopilot_enabled)
 
-        if brakeCmd > 0.10 and self._autopilot_enabled:  # about 10 percent of brake input
+        if brakeCmd > 0.10 and (self._autopilot_enabled or self._agent_autopilot_enabled):  # about 10 percent of brake input
             if self._agent_controlled == True:
                 self._agent_autopilot_enabled = False
                 print('steering input triggers autopilot toggled: {}'.format(self._agent_autopilot_enabled))
@@ -299,7 +299,7 @@ class DualControl(object):
                 print('steering input triggers autopilot toggled: {}'.format(self._autopilot_enabled))
                 actor.set_autopilot(self._autopilot_enabled)
 
-        if throttleCmd > 0.10 and self._autopilot_enabled:  # about 10 percent of throttle input
+        if throttleCmd > 0.10 and (self._autopilot_enabled or self._agent_autopilot_enabled):  # about 10 percent of throttle input
             if self._agent_controlled == True:
                 self._agent_autopilot_enabled = False
                 print('steering input triggers autopilot toggled: {}'.format(self._agent_autopilot_enabled))
