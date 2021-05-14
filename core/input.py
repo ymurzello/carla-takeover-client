@@ -281,7 +281,7 @@ class DualControl(object):
         #self._control.hand_brake = bool(jsButtons[self._handbrake_idx])
 
         # disable autopilot when steering brake or throttle input is detected
-        if steerCmd > 0.004444 and (self._autopilot_enabled or self._agent_autopilot_enabled):  # about 2 degrees of steering input
+        if steerCmd < -0.004444 or steerCmd > 0.004444 and (self._autopilot_enabled or self._agent_autopilot_enabled):  # about 2 degrees of steering input
             if self._agent_controlled == True:
                 self._agent_autopilot_enabled = False
                 print('steering input triggers autopilot toggled: {}'.format(self._agent_autopilot_enabled))
