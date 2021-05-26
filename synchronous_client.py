@@ -369,7 +369,7 @@ def main(args):
                 '''
                 if sync_mode.scenario and (scenario_class == "BikeCrossing"):
                     
-                    print ("sync_mode_scenario stage {}".format(stage))
+                    # print ("sync_mode_scenario stage {}".format(stage))
 
                     #check distance to bike
                     bike_dist = scenario_instance.check_distance(trans.location)
@@ -435,7 +435,7 @@ def main(args):
 
                 if sync_mode.scenario and (scenario_class == "PedestrianCrossing"):
                     
-                    print ("sync_mode_scenario stage {}".format(stage))
+                    # print ("sync_mode_scenario stage {}".format(stage))
 
                     #check distance to pedestrian
                     pedestrian_dist = scenario_instance.check_distance(trans.location)
