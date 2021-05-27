@@ -1,7 +1,6 @@
 '''
 bike crossing scenario class
 
-Rocky Liang, 2020
 '''
 import carla
 
