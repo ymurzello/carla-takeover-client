@@ -24,7 +24,6 @@ class NPCManager:
         self.blueprint_library = world.get_blueprint_library()
 
         self.tm = client.get_trafficmanager()
-        self.tm.set_synchronous_mode(True)
         self.tm.set_hybrid_physics_mode(True)
         self.tm.set_global_distance_to_leading_vehicle(1)
         #self.tm.global_percentage_speed_difference(100)
@@ -78,7 +77,7 @@ class NPCManager:
         x = float(details['x'])
         y = float(details['y'])
         #add to height so npc doesn't interfere with the ground
-        z = float(details['z']) + 2
+        z = float(details['z'])+1.5
         yaw = float(details['yaw'])
         pitch = float(details['pitch'])
         roll = float(details['roll'])
