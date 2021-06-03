@@ -522,7 +522,7 @@ def main(args):
                 if flash_on:
                     display.blit(
                         font_big.render('Please takeover control of the vehicle', True, (255,0,0)),
-                        (80 + SCREEN_W//2-265, SCREEN_H//2))
+                        (50 + SCREEN_W//2-265, SCREEN_H//2))
                     display.blit(wheel_icon, (SCREEN_W//2-64,SCREEN_H//2 + 64))
 
                 display.blit(
