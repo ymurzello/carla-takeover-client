@@ -1,5 +1,9 @@
 {
     "class": "CarCrashScenario",
+    "dist": {
+      "1": "100",
+      "2": "50"
+    },
     "vehicles": {
       "0": {
         "x": "230.122",
