@@ -3,7 +3,6 @@
 '''
 client for running scenarios
 
-Rocky Liang, 2020
 '''
 
 #USE carla99 env
@@ -433,6 +432,74 @@ def main(args):
                         sync_mode.scenario = False
                         pass
 
+		
+		if sync_mode.scenario and (scenario_class == "CarCrashScenario"):
+                    
+                    # print ("sync_mode_scenario stage {}".format(stage))
+
+                    #check distance to cars
+                    cars_dist = scenario_instance.check_distance(trans.location)
+                    #if distance is below threshold, do something
+                    #first stage: flash warning
+                    #2nd stage: none
+
+                    if stage==0:
+                        if cars_dist < trigger_distances[0]:
+                            #stage 0 to 1 or 0 to 3 transition
+                            if controller._agent_autopilot_enabled:
+                                stage = 1
+                            else:
+                                stage = 3
+                    elif stage==1:
+                        #stage 1: play warning sound
+                        if snapshot.timestamp.elapsed_seconds - sound_time > 3:
+                            beep.play()
+                            sound_time = snapshot.timestamp.elapsed_seconds
+                        if snapshot.timestamp.elapsed_seconds - flash_time > 1.5:
+                            flash_on = not flash_on
+                            flash_time = snapshot.timestamp.elapsed_seconds
+
+                        if cars_dist < trigger_distances[1]:
+                            flash_on = False
+                            #stage one to two transition
+                            scenario_instance.begin()
+                            #disable autopilot
+                            controller._agent_autopilot_enabled = False
+                            print('autopilot toggled: {}'.format(controller._agent_autopilot_enabled))
+                            sync_mode.car.set_autopilot(controller._agent_autopilot_enabled)
+                            stage = 2
+                        elif controller._agent_autopilot_enabled == False:
+                            #stage 1 to 3 transition
+                            flash_on = False
+                            stage = 3
+                    elif stage==2:
+                        #delta, throttle, brake = driver.drive(heading_error, delta_y, vx, curvature, 28, min(dist_to_car, dist_to_walker))
+                        vc = carla.VehicleControl(throttle=0, steer=0, brake=0.02)
+                        sync_mode.car.apply_control(vc)
+
+                        v = vehicle.get_velocity()
+                        vx, vy = util.measure_forward_velocity(v, trans.rotation, return_both=True)
+                        if vx <= 0.1 :
+                            stage = 3
+                        
+                    elif stage == 3:
+                        #stage 3, car crash still gets triggered
+                        #but driver stays in control
+                        if cars_dist > trigger_distances[1]:
+                            # scenario_instance.begin(carla.VehicleControl(throttle=0.3))
+                            stage = 4
+                        elif controller._agent_autopilot_enabled:
+                            stage = 1
+
+                    elif stage==4:
+                        #nothing happens in stage 4
+                        # print ("Scenario done, close it")
+                        # scenario_instance.kill_npcs()
+                        scenario_instance.kill_npcs()
+                        sync_mode.scenario = False
+                        pass
+		
+		
                 if sync_mode.scenario and (scenario_class == "PedestrianCrossing"):
                     
                     # print ("sync_mode_scenario stage {}".format(stage))
@@ -521,8 +588,8 @@ def main(args):
 
                 if flash_on:
                     display.blit(
-                        font_big.render('Please takeover control of vehicle', True, (255,0,0)),
-                        (SCREEN_W//2-265, SCREEN_H//2))
+                        font_big.render('Please takeover control of the vehicle', True, (255,0,0)),
+                        (50 + SCREEN_W//2-265, SCREEN_H//2))
                     display.blit(wheel_icon, (SCREEN_W//2-64,SCREEN_H//2 + 64))
 
                 display.blit(
