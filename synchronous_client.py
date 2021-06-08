@@ -26,8 +26,8 @@ from scenario_class.pedestrian_crossing_scenario import PedestrianCrossing
 '''
 To be able to use this import please add the following environment variable: PYTHONPATH=%CARLA_ROOT%/PythonAPI/carla 
 '''
-from core.custom_behaviour_agent import BehaviorAgent
-# from agents.navigation.behavior_agent import BehaviorAgent
+# from core.custom_behaviour_agent import BehaviorAgent
+from agents.navigation.behavior_agent import BehaviorAgent
 
 try:
     sys.path.append(glob.glob('../carla/dist/carla-*%d.%d-%s.egg' % (
