@@ -345,7 +345,7 @@ def main(args):
                         behaviour_agent.set_destination(behaviour_agent.vehicle.get_location(), AUTOPILOT_DESTINATION, clean=True)
                         print ("Autopilot is controlled by BehaviourAgent to destination: {}".format(AUTOPILOT_DESTINATION))
 
-                    behaviour_agent.update_information(world)
+                    behaviour_agent.update_information()
 
                     # print("Autopilot driving {}  more waypoints till destination is reached".format(len(behaviour_agent.get_local_planner().waypoints_queue)))
                     
