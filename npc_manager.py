@@ -24,6 +24,7 @@ class NPCManager:
         self.blueprint_library = world.get_blueprint_library()
 
         self.tm = client.get_trafficmanager()
+        self.tm.set_synchronous_mode(True)  #needed for v0.9.11
         self.tm.set_hybrid_physics_mode(True)
         self.tm.set_global_distance_to_leading_vehicle(1)
         #self.tm.global_percentage_speed_difference(100)
