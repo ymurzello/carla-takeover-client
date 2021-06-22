@@ -31,6 +31,8 @@ class NPCManager:
         #for m in dir(self.tm):
             #print(m)
 
+        world.constant_velocity_enabled = True
+
         #actor id containers
         self.cars_list = []
         self.peds_list = []
@@ -93,6 +95,7 @@ class NPCManager:
         if actor != None:
             if actor_pattern=='vehicle.*':
                 self.cars_list.append(actor.id)
+                actor.enable_constant_velocity(carla.Vector3D(10, 0, 0))  # 10 = target npc velocity in m/s . Adjust this value to match the same velocity as ego. 
             elif actor_pattern=='walker.pedestrian.*':
                 #walker_ai = self.world.spawn_actor(walker_ai_bp, carla.Transform(), actor)
                 tx = float(details['t_x'])
