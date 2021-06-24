@@ -10,6 +10,7 @@ import carla
 from carlahelp import util
 from carlahelp.filehelp import read_json_config
 
+AUTOPILOT_SPEED_PERCENT_DIFFERENCE = 90
 
 class NPCManager:
     def __init__(self):
@@ -27,9 +28,7 @@ class NPCManager:
         self.tm.set_synchronous_mode(True)  #needed for v0.9.11
         self.tm.set_hybrid_physics_mode(True)
         self.tm.set_global_distance_to_leading_vehicle(1)
-        #self.tm.global_percentage_speed_difference(100)
-        #for m in dir(self.tm):
-            #print(m)
+        self.tm.global_percentage_speed_difference(AUTOPILOT_SPEED_PERCENT_DIFFERENCE)
 
         world.constant_velocity_enabled = True
 
@@ -95,7 +94,6 @@ class NPCManager:
         if actor != None:
             if actor_pattern=='vehicle.*':
                 self.cars_list.append(actor.id)
-                actor.enable_constant_velocity(carla.Vector3D(10, 0, 0))  # 10 = target npc velocity in m/s . Adjust this value to match the same velocity as ego. 
             elif actor_pattern=='walker.pedestrian.*':
                 #walker_ai = self.world.spawn_actor(walker_ai_bp, carla.Transform(), actor)
                 tx = float(details['t_x'])
@@ -118,6 +116,7 @@ class NPCManager:
         car_actors = self.world.get_actors(self.cars_list)
         for a in car_actors:
             a.set_autopilot(enabled, tm_port)
+            self.tm.vehicle_percentage_speed_difference(a, AUTOPILOT_SPEED_PERCENT_DIFFERENCE)
 
     def enable_walker_ai(self):
         '''
