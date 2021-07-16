@@ -1,5 +1,5 @@
 '''
-bike crossing scenario class
+base scenario class
 
 '''
 import carla
@@ -100,6 +100,7 @@ class BaseScenario:
 
     def _spawn_pedestrian(self, idx):
         
+        percentagePedestriansCrossing = 1.0     # how many pedestrians will walk through the road
         details = self.config['pedestrians'][idx]
         #get transform
         x = float(details['x'])
@@ -115,6 +116,7 @@ class BaseScenario:
         #spawn
         bp = self.world.get_blueprint_library().find(details['actor_type'])
         actor = self.world.try_spawn_actor(bp, trans)
+        self.world.set_pedestrians_cross_factor(percentagePedestriansCrossing)
 
         if actor!=None:
             self.actors_list.append(actor.id)
