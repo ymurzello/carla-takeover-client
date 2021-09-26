@@ -3,6 +3,7 @@
 '''
 client for running scenarios
 
+
 '''
 
 #USE carla99 env
@@ -25,8 +26,8 @@ from scenario_class.pedestrian_crossing_scenario import PedestrianCrossing
 '''
 To be able to use this import please add the following environment variable: PYTHONPATH=%CARLA_ROOT%/PythonAPI/carla 
 '''
-# from core.custom_behaviour_agent import BehaviorAgent
-from agents.navigation.behavior_agent import BehaviorAgent
+from core.behavior_agent import BehaviorAgent
+# from agents.navigation.behavior_agent import BehaviorAgent
 
 try:
     sys.path.append(glob.glob('../carla/dist/carla-*%d.%d-%s.egg' % (
@@ -62,8 +63,8 @@ if DRIVERVIEW_CAMERA == True:
 MIRROR_W = 350
 MIRROR_H = 200
 
-DISPLAY_W = 1080
-DISPLAY_H = 720
+DISPLAY_W = 1200
+DISPLAY_H = 1000
 
 SCREEN_W = MIRROR_W*2+DISPLAY_W
 SCREEN_H = max(DISPLAY_H, MIRROR_H)
@@ -71,7 +72,7 @@ SCREEN_H = max(DISPLAY_H, MIRROR_H)
 FRONT_W = 300
 FRONT_H = 60
 
-FREQ = 15
+FREQ = 30
 
 def image_np(image):
     array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
@@ -249,7 +250,7 @@ def main(args):
             scenario_instance.spawn_npcs()
             trigger_distances = scenario_instance.get_distances()
             beep = pygame.mixer.Sound('assets/sounds/bell.wav')
-            wheel_icon = pygame.image.load('assets/icons/red.gif').convert_alpha()
+            wheel_icon = pygame.image.load('assets/icons/steering wheel.png').convert_alpha()
             sound_time = 0
             flash_time = 0
 
@@ -340,9 +341,9 @@ def main(args):
                 if controller._agent_autopilot_enabled == True:
                     if prev_agent_autopilot_enabled == False:
                         # Init the agent
-                        behaviour_agent = BehaviorAgent(vehicle, ignore_traffic_light=False, behavior="cautious")
+                        behaviour_agent = BehaviorAgent(vehicle, behavior="normal")
                         # Set agent's destination  
-                        behaviour_agent.set_destination(behaviour_agent.vehicle.get_location(), AUTOPILOT_DESTINATION, clean=True)
+                        behaviour_agent.set_destination(behaviour_agent.vehicle.get_location(), AUTOPILOT_DESTINATION)
                         print ("Autopilot is controlled by BehaviourAgent to destination: {}".format(AUTOPILOT_DESTINATION))
 
                     behaviour_agent.update_information()
@@ -352,7 +353,7 @@ def main(args):
                     if len(behaviour_agent.get_local_planner().waypoints_queue) <= 0: # For destination precision change this value
                         print("Target almost reached, mission accomplished...")
                         controller._agent_autopilot_enabled = False
-                        behaviour_agent.set_destination(behaviour_agent.vehicle.get_location(), behaviour_agent.vehicle.get_location(), clean=True)
+                        behaviour_agent.set_destination(behaviour_agent.vehicle.get_location(), behaviour_agent.vehicle.get_location())
                     else:
                         input_control = behaviour_agent.run_step()
                         world.player.apply_control(input_control)
@@ -387,10 +388,10 @@ def main(args):
                         #stage 1: play warning sound
                         if snapshot.timestamp.elapsed_seconds - sound_time > 3:
                             beep.play()
-                            sound_time = snapshot.timestamp.elapsed_seconds
+                            sound_time = snapshot.timestamp.elapsed_seconds - 0.75
                         if snapshot.timestamp.elapsed_seconds - flash_time > 1.5:
                             flash_on = not flash_on
-                            flash_time = snapshot.timestamp.elapsed_seconds
+                            flash_time = snapshot.timestamp.elapsed_seconds - 0.75
 
                         if bike_dist < trigger_distances[1]:
                             flash_on = False
@@ -407,7 +408,7 @@ def main(args):
                             stage = 3
                     elif stage==2:
                         #delta, throttle, brake = driver.drive(heading_error, delta_y, vx, curvature, 28, min(dist_to_car, dist_to_walker))
-                        vc = carla.VehicleControl(throttle=0, steer=0, brake=0.02)
+                        vc = carla.VehicleControl(throttle=0, steer=0, brake=0.01)
                         sync_mode.car.apply_control(vc)
 
                         v = vehicle.get_velocity()
@@ -419,7 +420,7 @@ def main(args):
                         #stage 3, bike crossing still gets triggered
                         #but driver stays in control
                         if bike_dist > trigger_distances[1]:
-                            # scenario_instance.begin(carla.VehicleControl(throttle=0.3))
+                            scenario_instance.begin()
                             stage = 4
                         elif controller._agent_autopilot_enabled:
                             stage = 1
@@ -428,11 +429,9 @@ def main(args):
                         #nothing happens in stage 4
                         # print ("Scenario done, close it")
                         # scenario_instance.kill_npcs()
-                        scenario_instance.kill_npcs()
                         sync_mode.scenario = False
                         pass
 
-		
 		if sync_mode.scenario and (scenario_class == "CarCrashScenario"):
                     
                     # print ("sync_mode_scenario stage {}".format(stage))
@@ -445,6 +444,7 @@ def main(args):
 
                     if stage==0:
                         if cars_dist < trigger_distances[0]:
+                            scenario_instance.begin()
                             #stage 0 to 1 or 0 to 3 transition
                             if controller._agent_autopilot_enabled:
                                 stage = 1
@@ -454,10 +454,10 @@ def main(args):
                         #stage 1: play warning sound
                         if snapshot.timestamp.elapsed_seconds - sound_time > 3:
                             beep.play()
-                            sound_time = snapshot.timestamp.elapsed_seconds
+                            sound_time = snapshot.timestamp.elapsed_seconds - 0.75
                         if snapshot.timestamp.elapsed_seconds - flash_time > 1.5:
                             flash_on = not flash_on
-                            flash_time = snapshot.timestamp.elapsed_seconds
+                            flash_time = snapshot.timestamp.elapsed_seconds - 0.75
 
                         if cars_dist < trigger_distances[1]:
                             flash_on = False
@@ -474,7 +474,7 @@ def main(args):
                             stage = 3
                     elif stage==2:
                         #delta, throttle, brake = driver.drive(heading_error, delta_y, vx, curvature, 28, min(dist_to_car, dist_to_walker))
-                        vc = carla.VehicleControl(throttle=0, steer=0, brake=0.02)
+                        vc = carla.VehicleControl(throttle=0, steer=0, brake=0.01)
                         sync_mode.car.apply_control(vc)
 
                         v = vehicle.get_velocity()
@@ -486,7 +486,7 @@ def main(args):
                         #stage 3, car crash still gets triggered
                         #but driver stays in control
                         if cars_dist > trigger_distances[1]:
-                            # scenario_instance.begin(carla.VehicleControl(throttle=0.3))
+                            scenario_instance.begin()
                             stage = 4
                         elif controller._agent_autopilot_enabled:
                             stage = 1
@@ -495,12 +495,10 @@ def main(args):
                         #nothing happens in stage 4
                         # print ("Scenario done, close it")
                         # scenario_instance.kill_npcs()
-                        scenario_instance.kill_npcs()
                         sync_mode.scenario = False
                         pass
 		
-		
-                if sync_mode.scenario and (scenario_class == "PedestrianCrossing"):
+        if sync_mode.scenario and (scenario_class == "PedestrianCrossing"):
                     
                     # print ("sync_mode_scenario stage {}".format(stage))
 
@@ -522,10 +520,10 @@ def main(args):
                         #stage 1: play warning sound
                         if snapshot.timestamp.elapsed_seconds - sound_time > 3:
                             beep.play()
-                            sound_time = snapshot.timestamp.elapsed_seconds
+                            sound_time = snapshot.timestamp.elapsed_seconds - 0.75
                         if snapshot.timestamp.elapsed_seconds - flash_time > 1.5:
                             flash_on = not flash_on
-                            flash_time = snapshot.timestamp.elapsed_seconds
+                            flash_time = snapshot.timestamp.elapsed_seconds - 0.75
 
                         if pedestrian_dist < trigger_distances[1]:
                             flash_on = False
@@ -542,7 +540,7 @@ def main(args):
                             stage = 3
                     elif stage==2:
                         #delta, throttle, brake = driver.drive(heading_error, delta_y, vx, curvature, 28, min(dist_to_car, dist_to_walker))
-                        vc = carla.VehicleControl(throttle=0, steer=0, brake=0.02)
+                        vc = carla.VehicleControl(throttle=0, steer=0, brake=0.01)
                         sync_mode.car.apply_control(vc)
 
                         v = vehicle.get_velocity()
@@ -554,7 +552,7 @@ def main(args):
                         #stage 3, pedestrian crossing still gets triggered
                         #but driver stays in control
                         if pedestrian_dist<trigger_distances[1]:
-                            scenario_instance.begin(carla.VehicleControl(throttle=0.3))
+                            scenario_instance.begin()
                             stage = 4
                         elif controller._agent_autopilot_enabled:
                             stage = 1
@@ -590,7 +588,7 @@ def main(args):
                     display.blit(
                         font_big.render('Please takeover control of the vehicle', True, (255,0,0)),
                         (50 + SCREEN_W//2-265, SCREEN_H//2))
-                    display.blit(wheel_icon, (SCREEN_W//2-64,SCREEN_H//2 + 64))
+                    display.blit(wheel_icon, (SCREEN_W * 0.46,SCREEN_H//3 + 64))
 
                 display.blit(
                     font.render('steer: {0:2.2f}, brake: {1:2.2f}, gas: {2:2.2f}'.format(control_states.steer,control_states.brake,control_states.throttle), False, (255, 255, 255)),
@@ -601,15 +599,15 @@ def main(args):
 
 
                 display.blit(
-                    font_big.render('Speed: % 5d km/h' % vx_kph, False, (255, 255, 255)),
-                    (SCREEN_W * 0.6, SCREEN_H - 50))
+                    font_big.render('Speed: % 5d km/h' % vx_kph, False, (50, 87, 168)),
+                    (SCREEN_W * 0.45, SCREEN_H - 205))
 
                 autopilot_str_val = 'OFF'
                 if controller._agent_autopilot_enabled == True: 
                     autopilot_str_val = 'ON'
                 display.blit(
-                    font_big.render('Autopilot: ' + autopilot_str_val, False, (255, 125, 255)),
-                    (SCREEN_W * 0.6, SCREEN_H - 100))
+                    font_big.render('  Autopilot: ' + autopilot_str_val, True, (139, 61, 136)),
+                    (SCREEN_W * 0.45, SCREEN_H - 240))
 
                 pygame.display.flip()
 
