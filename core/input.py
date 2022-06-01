@@ -110,7 +110,7 @@ class DualControl(object):
             self._rightlc_idx = int(self._parser.get(self._js_name, 'rightlc'))
 
             if 'Logitech' in self._js_name:
-                self._steer_gain = 1.0
+                self._steer_gain = 0.01
             elif 'Sony' in self._js_name:
                 self._steer_gain = 0.45
             else:

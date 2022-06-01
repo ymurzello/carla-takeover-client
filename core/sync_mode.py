@@ -76,6 +76,13 @@ class CarlaSyncMode(object):
         self._dicrectory_list.sort()
         print('Saving data to {}'.format(self.session_folder))
 
+    # Added by Sandy to retrieve session folder
+        global working_folder
+        working_folder = dstring
+
+    def working_folder(self):
+        global working_folder
+        return working_folder 
 
     def __enter__(self):
         self._settings = self.world.get_settings()
@@ -319,13 +326,14 @@ class CarlaSyncMode(object):
 
         #draw_path(self.waypoint_queue, self.world, time=0.05, z=2, max_num = 3)
 
-    def record_frame(self, snapshot, transform, velocity, control, affordance, wp, hlc, stage):
+    def record_frame(self, snapshot, transform, velocity, control, affordance, wp, hlc, stage, collision_flag, lane_invaded_flag, travel):
         '''
         called once per loop to record everything
         '''
         frame = {}
         #time
-        frame['gametime'] = str(snapshot.timestamp.elapsed_seconds)
+        frame['gametime hh:mm:ss'] = str(time.strftime("%H:%M:%S", time.gmtime(snapshot.timestamp.elapsed_seconds)))
+        frame['gametime ss.ms'] = str(snapshot.timestamp.elapsed_seconds)
         frame['time_stamp'] = str(time.time())
 
         #vehicle states
@@ -333,7 +341,9 @@ class CarlaSyncMode(object):
         acc = self.car.get_acceleration()
 
         vx, vy = util.measure_forward_velocity(velocity, transform.rotation, return_both=True)
+        vx_kph = vx*3.6
         frame['car_vx'] = str(vx)
+        frame['car_vx_kph'] = str(vx_kph)
         frame['car_vy'] = str(vy)
         frame['car_vz'] = str(velocity.z)
         frame['global_ax'] = str(acc.x)
@@ -346,6 +356,10 @@ class CarlaSyncMode(object):
         frame['global_y'] = str(transform.location.z)
         frame['global_z'] = str(transform.location.y)
         frame['global_heading'] = str(transform.rotation.yaw)
+
+        #distance travelled
+        d_travel = travel
+        frame['distance_travelled'] = str(d_travel)
 
         #control states
         frame['throttle'] = str(control.throttle)
@@ -367,6 +381,16 @@ class CarlaSyncMode(object):
         frame['dist_to_walker'] = str(affordance[4])
         frame['is_junction'] = str(wp.is_junction)
         frame['lane_id'] = str(wp.id)
+
+        #lane change
+        lane_invaded = lane_invaded_flag
+        frame['lane_change'] = str(lane_invaded)
+        #print(str(lane_invaded))
+
+        #collision
+        col_flag = collision_flag
+        frame['collision'] = str(col_flag)
+        #print(str(col_flag))
 
         #other cars
         frame['nearby_cars'] = {}

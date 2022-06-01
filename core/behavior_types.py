@@ -21,8 +21,8 @@ class Normal(object):
     speed_lim_dist = 1
     speed_decrease = 10
     safety_time = 5
-    min_proximity_threshold = 10
-    braking_distance = 5
+    min_proximity_threshold = 12
+    braking_distance = 10
     tailgate_counter = 0
 
 
