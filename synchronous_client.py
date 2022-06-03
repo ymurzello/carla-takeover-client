@@ -3,7 +3,7 @@
 '''
 client for running scenarios
 
-
+Rocky Liang, 2020
 '''
 
 #USE carla99 env
@@ -11,6 +11,8 @@ client for running scenarios
 import glob
 import os
 import sys
+import subprocess
+import pandas as pd
 
 import argparse
 import math
@@ -35,7 +37,7 @@ try:
         sys.version_info.minor,
         'win-amd64' if os.name == 'nt' else 'linux-x86_64'))[0])
 except IndexError:
-	pass
+    pass
 
 import carla
 
@@ -50,7 +52,8 @@ except ImportError:
     raise RuntimeError('cannot import numpy, make sure numpy package is installed')
 
 
-AUTOPILOT_DESTINATION = carla.Location(x=126.097374, y=125.237732, z=0.342617)
+AUTOPILOT_DESTINATION = carla.Location(x=2.230268, y=307.956115, z=1.335091)
+
 
 # Enable this to place the camera on dirvers view.
 DRIVERVIEW_CAMERA = False
@@ -114,6 +117,17 @@ def hlc_string(hlc):
     else:
         return "Left Lane Change"
 
+def IsCollision(event):
+    #actor_we_collide_against = event.other_actor 
+    global collision_flag
+    collision_flag = True
+    #print("Collision Detected")
+    
+def IsLaneInvaded(event):
+    global lane_invaded_flag
+    lane_invaded_flag = True
+    #print("Lane invasion detected")
+
 def should_quit():
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -127,13 +141,14 @@ def should_quit():
 def main(args):
     actor_list = []
     sensor_list = []
+    os.environ['SDL_VIDEO_CENTERED'] = '1'
     pygame.init()
-
+    
     display = pygame.display.set_mode(
         (SCREEN_W, SCREEN_H),
         pygame.HWSURFACE | pygame.DOUBLEBUF)
     fill_rect = pygame.Rect((0,0,MIRROR_W, SCREEN_H/2))
-    pygame.display.set_caption('CARLA Scenarios')
+    pygame.display.set_caption('Location L')
     font = get_font()
     font_big = get_font(font_size=30)
     clock = pygame.time.Clock()
@@ -145,6 +160,12 @@ def main(args):
     world = client.reload_world()
 
     config = read_json_config(args.spawn_config)
+
+    global collision_flag 
+    collision_flag = False
+
+    global lane_invaded_flag
+    lane_invaded_flag = False
 
     # This agent will drive the autopilot to certain destination
     behaviour_agent = None
@@ -175,6 +196,16 @@ def main(args):
             start_pose)
         #print(vehicle.attributes.get('role_name'))
         actor_list.append(vehicle)
+
+        #collision sensor
+        collision_sensor = world.spawn_actor(blueprint_library.find('sensor.other.collision'),
+                                        carla.Transform(), attach_to=vehicle)
+        collision_sensor.listen(lambda event: IsCollision(event))
+        
+        #lane invaded sensor
+        lane_invaded_sensor = world.spawn_actor(blueprint_library.find('sensor.other.lane_invasion'),
+                                        carla.Transform(), attach_to=vehicle)
+        lane_invaded_sensor.listen(lambda event: IsLaneInvaded(event))
 
         #spawn spectator cam
         cam_bp = blueprint_library.find('sensor.camera.rgb')
@@ -249,10 +280,17 @@ def main(args):
             scenario_instance.load_config(args.scenario_config)
             scenario_instance.spawn_npcs()
             trigger_distances = scenario_instance.get_distances()
-            beep = pygame.mixer.Sound('assets/sounds/bell.wav')
+            beep = pygame.mixer.Sound('assets/sounds/chime.wav')
             wheel_icon = pygame.image.load('assets/icons/steering wheel.png').convert_alpha()
             sound_time = 0
             flash_time = 0
+            dist_from_start = 0
+            dist_from_flashpoint = 0
+            flash_x = 0
+            flash_y = 0
+            cur_dist_trav = 0
+            flash_point = 0
+
 
         #initial scenario stage
         flash_on = False
@@ -334,7 +372,6 @@ def main(args):
                 affordance = (heading_error, delta_y, curvature, dist_to_car, dist_to_walker)
 
 
-
                 '''
                 behaviour agent begin
                 '''
@@ -346,11 +383,11 @@ def main(args):
                         behaviour_agent.set_destination(behaviour_agent.vehicle.get_location(), AUTOPILOT_DESTINATION)
                         print ("Autopilot is controlled by BehaviourAgent to destination: {}".format(AUTOPILOT_DESTINATION))
 
-                    behaviour_agent.update_information()
+                    behaviour_agent._update_information()
 
                     # print("Autopilot driving {}  more waypoints till destination is reached".format(len(behaviour_agent.get_local_planner().waypoints_queue)))
                     
-                    if len(behaviour_agent.get_local_planner().waypoints_queue) <= 0: # For destination precision change this value
+                    if len(behaviour_agent.get_local_planner()._waypoints_queue) <= 0: # For destination precision change this value
                         print("Target almost reached, mission accomplished...")
                         controller._agent_autopilot_enabled = False
                         behaviour_agent.set_destination(behaviour_agent.vehicle.get_location(), behaviour_agent.vehicle.get_location())
@@ -386,12 +423,16 @@ def main(args):
                                 stage = 3
                     elif stage==1:
                         #stage 1: play warning sound
-                        if snapshot.timestamp.elapsed_seconds - sound_time > 3:
+                        if snapshot.timestamp.elapsed_seconds - sound_time > 1:
                             beep.play()
-                            sound_time = snapshot.timestamp.elapsed_seconds - 0.75
-                        if snapshot.timestamp.elapsed_seconds - flash_time > 1.5:
+                            sound_time = snapshot.timestamp.elapsed_seconds
+                        if snapshot.timestamp.elapsed_seconds - flash_time > .5:
                             flash_on = not flash_on
-                            flash_time = snapshot.timestamp.elapsed_seconds - 0.75
+                            flash_time = snapshot.timestamp.elapsed_seconds
+                            if flash_point == 0:
+                                flash_point = snapshot.timestamp.elapsed_seconds
+                                flash_x = trans.location.x
+                                flash_y = trans.location.y
 
                         if bike_dist < trigger_distances[1]:
                             flash_on = False
@@ -432,7 +473,7 @@ def main(args):
                         sync_mode.scenario = False
                         pass
 
-		if sync_mode.scenario and (scenario_class == "CarCrashScenario"):
+                if sync_mode.scenario and (scenario_class == "CarCrashScenario"):
                     
                     # print ("sync_mode_scenario stage {}".format(stage))
 
@@ -452,12 +493,16 @@ def main(args):
                                 stage = 3
                     elif stage==1:
                         #stage 1: play warning sound
-                        if snapshot.timestamp.elapsed_seconds - sound_time > 3:
+                        if snapshot.timestamp.elapsed_seconds - sound_time > 1:
                             beep.play()
-                            sound_time = snapshot.timestamp.elapsed_seconds - 0.75
-                        if snapshot.timestamp.elapsed_seconds - flash_time > 1.5:
+                            sound_time = snapshot.timestamp.elapsed_seconds
+                        if snapshot.timestamp.elapsed_seconds - flash_time > .5:
                             flash_on = not flash_on
-                            flash_time = snapshot.timestamp.elapsed_seconds - 0.75
+                            flash_time = snapshot.timestamp.elapsed_seconds
+                            if flash_point == 0:
+                                flash_point = snapshot.timestamp.elapsed_seconds
+                                flash_x = trans.location.x
+                                flash_y = trans.location.y
 
                         if cars_dist < trigger_distances[1]:
                             flash_on = False
@@ -485,7 +530,7 @@ def main(args):
                     elif stage == 3:
                         #stage 3, car crash still gets triggered
                         #but driver stays in control
-                        if cars_dist > trigger_distances[1]:
+                        if cars_dist<trigger_distances[1]:
                             scenario_instance.begin()
                             stage = 4
                         elif controller._agent_autopilot_enabled:
@@ -497,8 +542,8 @@ def main(args):
                         # scenario_instance.kill_npcs()
                         sync_mode.scenario = False
                         pass
-		
-        if sync_mode.scenario and (scenario_class == "PedestrianCrossing"):
+
+                if sync_mode.scenario and (scenario_class == "PedestrianCrossing"):
                     
                     # print ("sync_mode_scenario stage {}".format(stage))
 
@@ -518,12 +563,16 @@ def main(args):
                                 stage = 3
                     elif stage==1:
                         #stage 1: play warning sound
-                        if snapshot.timestamp.elapsed_seconds - sound_time > 3:
+                        if snapshot.timestamp.elapsed_seconds - sound_time > 1:
                             beep.play()
-                            sound_time = snapshot.timestamp.elapsed_seconds - 0.75
-                        if snapshot.timestamp.elapsed_seconds - flash_time > 1.5:
+                            sound_time = snapshot.timestamp.elapsed_seconds
+                        if snapshot.timestamp.elapsed_seconds - flash_time > .5:
                             flash_on = not flash_on
-                            flash_time = snapshot.timestamp.elapsed_seconds - 0.75
+                            flash_time = snapshot.timestamp.elapsed_seconds
+                            if flash_point == 0:
+                                flash_point = snapshot.timestamp.elapsed_seconds
+                                flash_x = trans.location.x
+                                flash_y = trans.location.y
 
                         if pedestrian_dist < trigger_distances[1]:
                             flash_on = False
@@ -571,8 +620,9 @@ def main(args):
                     record_start_flag = True
                 if sync_mode.record and record_start_flag:
                     #sync_mode.record_image(tick_data[1:])
-                    sync_mode.record_frame(snapshot, trans, v, control_states, affordance, second_wp, hlc, stage)
-
+                    sync_mode.record_frame(snapshot, trans, v, control_states, affordance, second_wp, hlc, stage, collision_flag, lane_invaded_flag,dist_from_start)
+                    collision_flag = False
+                    lane_invaded_flag = False
                 #image_semseg.convert(carla.ColorConverter.CityScapesPalette)
                 fps = round(1.0 / snapshot.timestamp.delta_seconds)
 
@@ -587,7 +637,7 @@ def main(args):
                 if flash_on:
                     display.blit(
                         font_big.render('Please takeover control of the vehicle', True, (255,0,0)),
-                        (50 + SCREEN_W//2-265, SCREEN_H//2))
+                        (50 + SCREEN_W//2-265, SCREEN_H//3))
                     display.blit(wheel_icon, (SCREEN_W * 0.46,SCREEN_H//3 + 64))
 
                 display.blit(
@@ -596,7 +646,6 @@ def main(args):
                 display.blit(
                     font.render('% 5d Gear' % control_states.gear, False, (255, 255, 255)),
                     (8, 40))
-
 
                 display.blit(
                     font_big.render('Speed: % 5d km/h' % vx_kph, False, (50, 87, 168)),
@@ -608,6 +657,14 @@ def main(args):
                 display.blit(
                     font_big.render('  Autopilot: ' + autopilot_str_val, True, (139, 61, 136)),
                     (SCREEN_W * 0.45, SCREEN_H - 240))
+
+                dist_from_start = (vx * (snapshot.timestamp.elapsed_seconds/1000))   # distance per timestamp
+                cur_dist_trav = cur_dist_trav + dist_from_start   # current distance travelled from the start
+                dist_from_flashpoint = ( ((trans.location.x - flash_x)**2 + (trans.location.y - flash_y)**2 ) **(1/2) )
+
+                if flash_point != 0:
+                    if dist_from_flashpoint > 80:
+                        pygame.quit()
 
                 pygame.display.flip()
 
@@ -622,16 +679,72 @@ def main(args):
         for actor in actor_list:
             actor.destroy()
 
-    pygame.quit()
+        collision_sensor.destroy()
+        lane_invaded_sensor.destroy()
+
+        pygame.quit()
+
+        # Added by Sandy
+        # Automate created working folder (from sync_mode._make_folders)
+        # and rename this to 1..2..3.. and so on
+        save_dir = "D:/Windows/CARLA/Location L/Saved"
+        #save_dir = "D:/CARLA_0.9.12/Location L/Saved"
+
+        folder2rename = sync_mode.working_folder()
+        #print(folder2rename)
+    
+        folder_count = 0   # determine how many folders already exists
+        
+        for folder in os.listdir(save_dir):
+            #for directories in dirs:
+            folder_count += 1
+
+        nextfolder = folder_count
+        print("Renaming " + str(folder2rename) + "...")
+        #print(nextfolder)
+
+        #sn = args.scenario_number      
+        newfolder = str(nextfolder) + "-" + args.scenario_number + "-" +args.age_group
+        os.chdir(save_dir)
+        os.rename(folder2rename,newfolder)
+        print(folder2rename +" renamed to directory " + str(newfolder))
+
+        # Convert json files to csv
+        os.chdir("D:/Windows/CARLA/Location L")
+        #os.chdir("D:/CARLA_0.9.12/Location L")
+
+        subprocess.call('python saved_json_to_csv.py --json_dir Saved/' + newfolder + '/targets --csv_out Saved/'+ newfolder +'/'+ newfolder +'.csv',shell=True)
+
+        # Convert csv to xlsx
+        print("Converting json files > csv > xlsx...")
+        os.chdir(save_dir+'/'+newfolder)
+        csvfile = newfolder+'.csv'
+        xlsfile = newfolder+'.xlsx'
+        read_file = pd.read_csv (csvfile)
+        read_file.to_excel (r'temp.xlsx', index = None, header=True)
+        os.rename('temp.xlsx',xlsfile)
+
+        #Freeze Top row & enable Filter
+        from openpyxl import load_workbook
+        workbook = load_workbook(xlsfile)
+        ws = workbook.active
+        ws.freeze_panes = 'A2'
+        ws.auto_filter.ref = ws.dimensions
+        workbook.save(xlsfile)
+
     print('done.')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', '--record', type=bool, default=False)
-    parser.add_argument('-s', '--scenario', type=bool, default=False)
+    parser.add_argument('-s', '--scenario', type=bool, default=True)
     parser.add_argument('-sp', '--spawn_config', type=str, default='')
     parser.add_argument('-sc', '--scenario_config', type=str, default='')
+    parser.add_argument('-sn', '--scenario_number', type=str, default='')
+    parser.add_argument('-age', '--age_group', type=str, default='')
+
+
     args = parser.parse_args()
 
     try:
